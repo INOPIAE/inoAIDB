@@ -1,0 +1,16 @@
+[db]
+db_host=localhost
+db_name=inoAIDB
+db_user=inoAIDB
+db_password=supersecure
+
+[jwt]
+jwt_secret = supersecretkey
+jwt_algorithm = HS256
+jwt_expire_minutes = 60
+
+[testdb]
+db_host=localhost
+db_name=test_inoAIDB
+db_user=inoAIDB
+db_password=testpassword

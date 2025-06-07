@@ -1,0 +1,118 @@
+from datetime import datetime
+from pydantic import BaseModel, EmailStr, Field
+from typing import Optional
+from uuid import UUID
+
+# Auth
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+class TokenData(BaseModel):
+    user_id: int
+    email: EmailStr
+
+class OTPVerify(BaseModel):
+    email: EmailStr
+    otp_code: str
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str = Field(..., min_length=16, format="password")
+    new_password: str = Field(..., min_length=16, format="password")
+    totp: str
+
+
+# class AuthTokenOut(BaseModel):
+#     id: UUID
+#     user_id: int
+#     token: str
+#     created: datetime
+#     expires: datetime
+
+#     class Config:
+#         orm_mode = True
+
+
+# class CreateAuthToken(BaseModel):
+#     user_id: int
+#     token: str
+#     expires: datetime
+
+# User
+class UserBase(BaseModel):
+    username: str
+    email: EmailStr
+    is_active: Optional[bool] = True
+    is_admin: Optional[bool] = False
+
+class UserCreate(UserBase):
+    password: str = Field(..., min_length=6)
+
+class UserOut(UserBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    is_active: Optional[bool] = None
+    is_admin: Optional[bool] = None
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+    otp: str
+
+#Manufacturer
+class ManufacturerBase(BaseModel):
+    name: str
+    description: str | None = None
+    is_active: bool = True
+
+
+class ManufacturerCreate(ManufacturerBase):
+    pass
+
+
+class ManufacturerUpdate(ManufacturerBase):
+    pass
+
+
+class ManufacturerOut(ManufacturerBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
+#Application
+class ApplicationBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    manufacturer_id: int
+    is_active: bool = True
+
+class CreateApplication(ApplicationBase):
+    pass
+
+class ApplicationOut(ApplicationBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
+class ApplicationWithManufacturerOut(BaseModel):
+    id: int
+    name: str
+    description: Optional[str]
+    is_active: bool
+    manufacturer_id: int
+    manufacturer_name: str
+
+    class Config:
+        orm_mode = True
