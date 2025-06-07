@@ -1,0 +1,61 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Caches
+*.log
+*.sqlite3
+*.db
+*.pid
+*.seed
+*.pem
+*.cache
+
+# Environments
+.env
+backend/config.ini
+
+# Python virtualenv
+venv/
+ENV/
+env/
+.venv/
+.ENV/
+.env.bak/
+
+# VS Code
+.vscode/
+
+# Pytest
+.cache/
+*.cover
+.coverage
+coverage.xml
+htmlcov/
+
+# mypy
+.mypy_cache/
+
+# FastAPI
+instance/
+*.db
+*.sqlite3
+
+# Frontend
+frontend/dist/
+frontend/node_modules/
+frontend/.env
+frontend/.vite
+
+# System
+.DS_Store
+Thumbs.db
+
+# Backup
+*.bak
+*.swp
+*.swo
+
+/backend/tests/*.py1
+.marcus/
