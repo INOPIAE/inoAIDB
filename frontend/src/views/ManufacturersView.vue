@@ -3,28 +3,28 @@
     <v-container>
       <v-row class="justify-space-between align-center mb-4">
         <v-col>
-          <h2>Manufacturer</h2>
+          <h2>{{ t('manufacturer') }}</h2>
         </v-col>
         <v-col class="text-right">
-          <v-btn v-if="authStore.isAuthenticated" @click="createItem" color="primary">New</v-btn>
+          <v-btn v-if="authStore.isAuthenticated" @click="createItem" color="primary">{{ t('new') }}</v-btn>
         </v-col>
       </v-row>
       <v-table>
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Description</th>
-            <th>Active</th>
-            <th v-if="authStore.isAuthenticated">Actions</th>
+            <th>{{ t('name') }}</th>
+            <th>{{ t('description') }}</th>
+            <th v-if="authStore.isAuthenticated">{{ t('active') }}</th>
+            <th v-if="authStore.isAuthenticated">{{ t('actions') }}</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="m in manufacturers" :key="m.id">
             <td>{{ m.name }}</td>
             <td>{{ m.description }}</td>
-            <td>{{ m.is_active ? 'Yes' : 'No' }}</td>
+            <td v-if="authStore.isAuthenticated">{{ m.is_active ? t('yes') : t('no') }}</td>
             <td v-if="authStore.isAuthenticated">
-              <v-btn @click="editItem(m)" size="small" color="primary">Edit</v-btn>
+              <v-btn @click="editItem(m)" size="small" color="primary">{{ t('edit') }}</v-btn>
             </td>
           </tr>
         </tbody>
@@ -45,8 +45,8 @@
 
         <v-card-actions>
           <v-spacer />
-          <v-btn text @click="dialog = false">Cancel</v-btn>
-          <v-btn color="primary" @click="saveManufacturer">Save</v-btn>
+          <v-btn text @click="dialog = false">{{ t('cancel') }}</v-btn>
+          <v-btn color="primary" @click="saveManufacturer">{{ t('save') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -57,6 +57,9 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const authStore = useAuthStore()
 const manufacturers = ref([])
@@ -76,7 +79,7 @@ const fetchManufacturers = async () => {
 
 const saveManufacturer = async () => {
   if (!authStore.isAuthenticated || !authStore.token) {
-    alert('You must be logged in.')
+    alert(t('alertManufacturer'))
     return
   }
 
@@ -96,7 +99,7 @@ const saveManufacturer = async () => {
     await fetchManufacturers()
   } catch (err) {
     console.error(err)
-    alert('Fehler beim Speichern')
+    alert(t('errorSaveFailed'))
   }
 }
 

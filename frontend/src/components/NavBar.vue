@@ -14,7 +14,7 @@
             @click="item.onClick ? item.onClick() : null"
           >
             <v-icon :icon="item.icon" />
-            <span class="link-text">{{ item.title }}</span>
+            <span class="link-text">{{ t(item.title) }}</span>
           </a>
         </template>
         <template v-else>
@@ -24,7 +24,7 @@
             @click="item.onClick ? item.onClick() : null"
           >
             <v-icon :icon="item.icon" />
-            <span class="link-text">{{ item.title }}</span>
+            <span class="link-text">{{ t(item.title) }}</span>
           </router-link>
         </template>
       </v-list-item>
@@ -35,15 +35,16 @@
 <script>
 import { computed } from "vue";
 import { useAuthStore } from "@/stores/auth";
+import { useI18n } from 'vue-i18n'
 
 export default {
     setup() {
-        const authStore = useAuthStore(); // Access the Pinia store
+        const authStore = useAuthStore();
+        const { t } = useI18n()
 
-        // Define navigation items
         const items = computed(() => [
             {
-                title: 'Home',
+                title: 'home',
                 icon: `mdi-home`,
                 href: '/home',
                 condition: null,
@@ -52,13 +53,13 @@ export default {
                 style: 'divider',
             },
             {
-                title: 'Applications',
+                title: 'applications',
                 icon: `mdi-application-outline`,
                 href: '/applications',
                 condition: null,
             },
             {
-                title: 'Manufacturers',
+                title: 'manufacturer',
                 icon: `mdi-warehouse`,
                 href: '/manufacturers',
                 condition: null,
@@ -67,27 +68,27 @@ export default {
                 style: 'divider',
             },
             {
-                title: 'Account',
+                title: 'account',
                 icon: `mdi-account`,
                 href: '/userprofile',
                 condition: () => authStore.isAuthenticated,
             },
             {
-                title: 'Login',
+                title: 'login',
                 icon: `mdi-login`,
                 href: '/login',
                 condition: () => !authStore.isAuthenticated,
                 level: 1,
             },
             {
-                title: 'Invite',
+                title: 'invite',
                 icon: `mdi-account-plus`,
                 href: '/invite',
                 condition: () => authStore.isAuthenticated,
                 level: 1,
             },
             {
-                title: 'Logout',
+                title: 'logout',
                 icon: `mdi-logout`,
                 href: "#", // Use href as placeholder (or null)
                 onClick: () => authStore.logout(),
@@ -95,29 +96,24 @@ export default {
                 level: 1,
             },
             {
-                title: 'Register',
+                title: 'register',
                 icon: `mdi-account-edit`,
                 href: '/register',
-                condition: () => !authStore.isLoggedIn,
+                condition: () => !authStore.isAuthenticated,
                 level: 1,
             },
-            {
-                style: 'divider',
-                condition: () => authStore.isLoggedIn,
-            },
-
             {
                 style: 'divider',
                 condition: () => authStore.isAuthenticated && authStore.user?.is_admin,
             },
             {
-                title: 'Administration',
+                title: 'administration',
                 icon: `mdi-account`,
                 href: '/userprofile',
                 condition: () => authStore.isAuthenticated && authStore.user?.is_admin,
             },
             {
-                title: 'User administration',
+                title: 'userAdministration',
                 icon: `mdi-account-supervisor`,
                 href: '/adminusers',
                 condition: () => authStore.isAuthenticated && authStore.user?.is_admin,
@@ -127,25 +123,25 @@ export default {
                 style: 'divider',
             },
             {
-                title: 'API Documentation',
+                title: 'apiDocumentation',
                 style: 'external',
                 icon: 'mdi-api',
                 href: 'http://localhost:8000/docs',
                 condition:  null,
             },
             {
-                title: 'About',
+                title: 'about',
                 icon: `mdi-information-variant`,
                 href: '/about',
                 condition:  null,
             },
                         {
-                title: 'Imprint',
+                title: 'imprint',
                 icon: `mdi-information-variant`,
                 href: '/imprint',
                 condition:  null,
             },            {
-                title: 'Data Protection',
+                title: 'dataprotection',
                 icon: `mdi-information-variant`,
                 href: '/dataprotection',
                 condition:  null,
@@ -155,6 +151,7 @@ export default {
         return {
             authStore,
             items,
+            t
         };
     },
 };
