@@ -3,10 +3,10 @@
     <v-container class="d-flex justify-space-between align-center">
       <div>
         <span v-if="authStore.isAuthenticated && authStore.user">
-          Logged in as <strong>{{ authStore.user.username }}</strong>
+          <span v-html="$t('loggedInAs', { username: authStore.user.username })"></span>
         </span>
         <span v-else>
-          Not logged in
+          {{ $t('notLoggedIn') }}
         </span>
       </div>
       <div>

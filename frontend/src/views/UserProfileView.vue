@@ -1,19 +1,19 @@
 <template>
   <v-container>
-    <h2>My Profile</h2>
+    <h2>{{ t('myProfile') }}</h2>
 
     <v-card class="pa-4">
-      <p><strong>Name:</strong> {{ user?.username }}</p>
-      <p><strong>E-Mail:</strong> {{ user?.email }}</p>
-      <p><strong>Active:</strong> {{ user?.is_active ? 'Yes' : 'No' }}</p>
+      <p><strong>{{ t('name') }}:</strong> {{ user?.username }}</p>
+      <p><strong>{{ t('email') }}:</strong> {{ user?.email }}</p>
+      <p><strong>{{ t('active') }}:</strong> {{ user?.is_active ? t('yes') : t('no') }}</p>
 
       <v-divider class="my-4" />
 
-      <h3>Change Password</h3>
-      <v-text-field v-model="form.old_password" label="Old Password" type="password" />
-      <v-text-field v-model="form.new_password" label="New Password" type="password" />
-      <v-text-field v-model="form.totp" label="TOTP Code" />
-      <v-btn @click="changePassword" color="primary">Change</v-btn>
+      <h3>{{ t('changePassword') }}</h3>
+      <v-text-field v-model="form.old_password" :label="t('oldPassword')" type="password" />
+      <v-text-field v-model="form.new_password" :label="t('newPassword')" type="password" />
+      <v-text-field v-model="form.totp" :label="t('totpCode')" />
+      <v-btn @click="changePassword" color="primary">{{ t('change') }}</v-btn>
     </v-card>
   </v-container>
 </template>
@@ -22,7 +22,9 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import axios from 'axios'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const user = ref(null)
 const form = ref({
@@ -43,10 +45,10 @@ const changePassword = async () => {
     await axios.post('/api/users/creds/passwd', form.value, {
       headers: { Authorization: `Bearer ${authStore.token}` },
     })
-    alert('Password changed successfully')
+    alert(t('passwordChangedSuccess'))
     form.value = { old_password: '', new_password: '', totp: '' }
   } catch (e) {
-    alert('Error: ' + e.response?.data?.detail)
+    alert(t('error') + ': ' + (e.response?.data?.detail || ''))
   }
 }
 </script>

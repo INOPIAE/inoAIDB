@@ -2,7 +2,7 @@
   <v-container>
     <v-row class="justify-space-between align-center mb-4">
       <v-col cols="12" md="6">
-        <h2>Applications</h2>
+        <h2>{{ $t('applications') }}</h2>
       </v-col>
       <v-col cols="12" md="4">
         <v-select
@@ -10,12 +10,12 @@
           :items="manufacturerFilterItems"
           item-title="name"
           item-value="id"
-          label="Filter manufacturer"
+          :label="$t('filterManufacturer')"
           clearable
         />
       </v-col>
       <v-col cols="auto" v-if="authStore.isAuthenticated">
-        <v-btn color="primary" @click="openDialog()">Neu</v-btn>
+        <v-btn color="primary" @click="openDialog()">{{ $t('new') }}</v-btn>
       </v-col>
     </v-row>
 
@@ -25,36 +25,38 @@
       item-value="id"
       class="elevation-1"
     >
-      <template v-slot:item.is_active="{ item }">
-        <span>{{ item.is_active ? 'Ja' : 'Nein' }}</span>
-      </template>
 
+      <template v-slot:item.is_active="{ item }" v-if="authStore.isAuthenticated">
+        <span>{{ item.is_active ? $t('yes') : $t('no') }}</span>
+      </template>
       <template v-if="authStore.isAuthenticated" v-slot:item.actions="{ item }">
-        <v-btn @click="openDialog(item)" size="small" color="primary">Edit</v-btn>
+        <v-btn @click="openDialog(item)" size="small" color="primary">
+          {{ $t('edit') }}
+        </v-btn>
       </template>
     </v-data-table>
 
     <v-dialog v-model="dialog" max-width="600">
       <v-card>
         <v-card-title>
-          {{ form.id ? 'Edit application' : 'New application' }}
+          {{ form.id ? $t('editApplication') : $t('newApplication') }}
         </v-card-title>
         <v-card-text>
-          <v-text-field v-model="form.name" label="Name" />
-          <v-textarea v-model="form.description" label="Description" />
+          <v-text-field v-model="form.name" :label="$t('name')" />
+          <v-textarea v-model="form.description" :label="$t('description')" />
           <v-select
             v-model="form.manufacturer_id"
             :items="manufacturers"
             item-title="name"
             item-value="id"
-            label="Manufacturer"
+            :label="$t('manufacturer')"
           />
-          <v-switch v-model="form.is_active" label="Active?" />
+          <v-switch v-model="form.is_active" :label="$t('activeQuestion')" />
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn text @click="closeDialog()">Cancel</v-btn>
-          <v-btn color="primary" @click="submit()">Save</v-btn>
+          <v-btn text @click="closeDialog()">{{ $t('cancel') }}</v-btn>
+          <v-btn color="primary" @click="submit()">{{ $t('save') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -65,7 +67,9 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 const applications = ref([])
@@ -73,28 +77,47 @@ const manufacturers = ref([])
 const dialog = ref(false)
 const selectedManufacturer = ref(null)
 
-const headers = [
-  { title: 'Name', key: 'name' },
-  { title: 'Description', key: 'description' },
-  { title: 'Manufacturer', key: 'manufacturer_name' },
-  { title: 'Active', key: 'is_active' },
-  { title: 'Actions', key: 'actions', sortable: false },
-]
+const headers = computed(() => [
+  { title: t('name'), key: 'name' },
+  { title: t('description'), key: 'description' },
+  { title: t('manufacturer'), key: 'manufacturer_name' },
+  { title: t('active'), key: 'is_active' },
+  { title: t('actions'), key: 'actions', sortable: false },
+])
 
 const visibleHeaders = computed(() => {
-  return authStore.isAuthenticated
-    ? headers
-    : headers.filter(h => h.key !== 'actions')
+
+  let base = [
+    { title: t('name'), key: 'name' },
+    { title: t('description'), key: 'description' },
+    { title: t('manufacturer'), key: 'manufacturer_name' }
+  ]
+
+  if (authStore.isAuthenticated) {
+    base.push({ title: t('active'), key: 'is_active' })
+    base.push({ title: t('actions'), key: 'actions', sortable: false })
+  }
+
+  return base
 })
 
 const manufacturerFilterItems = computed(() => [
-  { id: null, name: 'All' },
+  { id: null, name: t('all') },
   ...manufacturers.value,
 ])
 
 const filteredApplications = computed(() => {
-  if (!selectedManufacturer.value) return applications.value
-  return applications.value.filter(app => app.manufacturer_id === selectedManufacturer.value)
+  let apps = applications.value
+
+  if (!authStore.isAuthenticated) {
+    apps = apps.filter(app => app.is_active)
+  }
+
+  if (selectedManufacturer.value) {
+    apps = apps.filter(app => app.manufacturer_id === selectedManufacturer.value)
+  }
+
+  return apps
 })
 
 const form = ref({
