@@ -14,3 +14,5 @@ bcrypt
 pytest-cov
 passlib[bcrypt]
 pyotp
+
+alembic

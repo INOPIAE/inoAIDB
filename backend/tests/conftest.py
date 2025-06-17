@@ -1,8 +1,10 @@
 import pytest
-
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+
+from alembic.config import Config
+from alembic import command
 
 from app import auth, models
 from app.config import get_settings
@@ -13,22 +15,28 @@ from app.models import Application, Manufacturer, User
 
 @pytest.fixture(scope="session")
 def engine():
-    settings = get_settings("test")  # <-- explizit Testkonfiguration verwenden
+    settings = get_settings("test")
     engine = create_engine(settings.database_url)
     yield engine
     engine.dispose()
 
 
 @pytest.fixture(scope="session")
-def tables(engine):
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
-    yield
-    Base.metadata.drop_all(bind=engine)
+def alembic_config():
+    alembic_cfg = Config("alembic.ini")
+    alembic_cfg.set_main_option("sqlalchemy.url", get_settings("test").database_url)
+    return alembic_cfg
 
 
 @pytest.fixture(scope="function")
-def db(engine, tables):
+def run_migrations(engine, alembic_config):
+    command.downgrade(alembic_config, "base")
+    command.upgrade(alembic_config, "head")
+    yield
+
+
+@pytest.fixture(scope="function")
+def db(engine, run_migrations):
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = TestingSessionLocal()
     try:
@@ -58,7 +66,6 @@ def setup_test_data(db):
     db.execute(text("ALTER SEQUENCE manufacturers_id_seq RESTART WITH 1"))
     db.execute(text("ALTER SEQUENCE applications_id_seq RESTART WITH 1"))
 
-
     user1 = User(username="admin", email="admin@example.com", hashed_password=auth.pwd_context.hash("passwordpassword"), is_admin=True, totp_secret=auth.generate_totp_secret())
     user2 = User(username="user", email="user@example.com", hashed_password=auth.pwd_context.hash("passwordpassword"), is_admin=False, totp_secret=auth.generate_totp_secret())
     user3 = User(username="missingotp", email="missingotp@example.com", hashed_password=auth.pwd_context.hash("passwordpassword"), is_admin=False)
@@ -66,9 +73,9 @@ def setup_test_data(db):
     man1 = Manufacturer(name="Microsoft", description="Tech", is_active=True)
     man2 = Manufacturer(name="Apple", description="Tech", is_active=True)
 
-    app1 = Application(name="Office", description="software", manufacturer_id = 1, is_active=True)
-    app2 = Application(name="Visual Studio Code", description="software", manufacturer_id = 1, is_active=True)
-    app3 = Application(name="Alexa", description="software", manufacturer_id = 2, is_active=True)
+    app1 = Application(name="Office", description="software", manufacturer_id=1, is_active=True)
+    app2 = Application(name="Visual Studio Code", description="software", manufacturer_id=1, is_active=True)
+    app3 = Application(name="Alexa", description="software", manufacturer_id=2, is_active=True)
 
     db.add_all([user1, user2, user3, man1, man2, app1, app2, app3])
     db.commit()
@@ -94,7 +101,7 @@ def authenticated_client_for_email(db, client):
             totp_secret = auth.generate_totp_secret()
             user = models.User(
                 email=email,
-                hashed_password=auth.pwd_context.hash("passwordpassword"),
+                hashed_password=auth.pwd_context.hash(password),
                 totp_secret=totp_secret,
                 is_active=True,
                 is_verified=True,
@@ -102,8 +109,6 @@ def authenticated_client_for_email(db, client):
             db.add(user)
             db.commit()
             db.refresh(user)
-        else:
-            totp_secret = user.totp_secret
 
         otp_code = auth.get_current_totp(user.totp_secret)
 
@@ -112,15 +117,13 @@ def authenticated_client_for_email(db, client):
             "password": password,
             "otp": otp_code
         })
-
         assert response.status_code == 200, f"Login failed: {response.text}"
 
-        response = client.post("api/auth/verify", json={
+        response = client.post("/api/auth/verify", json={
             "email": email,
             "otp_code": otp_code
         })
-
-        assert response.status_code == 200, f"Login failed: {response.text}"
+        assert response.status_code == 200, f"Verify failed: {response.text}"
 
         token = response.json()["access_token"]
         authed_client = TestClient(app)
