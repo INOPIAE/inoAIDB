@@ -10,7 +10,7 @@ from app import auth, models
 from app.config import get_settings
 from app.database import Base, get_db
 from app.main import app
-from app.models import Application, Manufacturer, User
+from app.models import Application, AuthInvite, Manufacturer, User
 
 
 @pytest.fixture(scope="session")
@@ -57,6 +57,7 @@ def client(db):
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_test_data(db):
+    db.query(AuthInvite).delete()
     db.query(User).delete()
     db.query(Application).delete()
     db.query(Manufacturer).delete()
@@ -77,7 +78,11 @@ def setup_test_data(db):
     app2 = Application(name="Visual Studio Code", description="software", manufacturer_id=1, is_active=True)
     app3 = Application(name="Alexa", description="software", manufacturer_id=2, is_active=True)
 
-    db.add_all([user1, user2, user3, man1, man2, app1, app2, app3])
+    inv1 = AuthInvite(code = "SpecialInvite", use_count = 0, use_max = 1)
+    inv2 = AuthInvite(code = "invite1", use_count = 1, use_max = 2)
+    inv3 = AuthInvite(code = "invite2", use_count = 1, use_max = 1)
+
+    db.add_all([user1, user2, user3, man1, man2, app1, app2, app3, inv1, inv2, inv3])
     db.commit()
     yield
     db.close()

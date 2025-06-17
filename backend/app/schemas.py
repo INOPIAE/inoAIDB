@@ -1,6 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 # Auth
@@ -20,6 +20,28 @@ class ChangePasswordRequest(BaseModel):
     old_password: str = Field(..., min_length=16, format="password")
     new_password: str = Field(..., min_length=16, format="password")
     totp: str
+
+
+class AuthInviteCreateRequest(BaseModel):
+    code: Optional[str] = Field(None, description="Optional invite code. If not provided, a random code will be generated.")
+    use_max: Optional[int] = Field(1, description="Maximum number of uses for the invite.")
+
+
+class AuthInviteCreateResponse(BaseModel):
+    code: str
+    use_max: int
+
+
+class AuthInviteStatusResponse(BaseModel):
+    use_left: int
+
+class InviteResponse(BaseModel):
+    code: str
+    use_left: int
+
+
+class InviteListResponse(BaseModel):
+    invites: List[InviteResponse]
 
 
 # class AuthTokenOut(BaseModel):
@@ -64,6 +86,24 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
     otp: str
+
+
+class RegisterRequest(BaseModel):
+    username: str
+    email: EmailStr
+    password: str = Field(..., min_length=16, format="password")
+    invite: str
+
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    email: EmailStr
+
+
+class RegisterResponse(BaseModel):
+    user: UserResponse
+    totp_uri: str
 
 #Manufacturer
 class ManufacturerBase(BaseModel):

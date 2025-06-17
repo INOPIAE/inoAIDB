@@ -2,7 +2,9 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 import pyotp
-import os
+from sqlalchemy.orm import Session
+from app.models import AuthInvite
+
 
 from app.config import settings
 
@@ -51,3 +53,16 @@ def verify_totp(token: str, secret: str) -> bool:
 
 def get_current_totp(secret):
     return pyotp.TOTP(secret).now()
+
+def validate_invite(db: Session, code: str) -> AuthInvite:
+    invite = db.query(AuthInvite).filter(
+        AuthInvite.code == code
+    ).first()
+
+    if not invite:
+        return None
+
+    if invite.use_count >= invite.use_max:
+        return None
+
+    return invite

@@ -1,7 +1,7 @@
-from app.models import Application, Manufacturer, User
+from app.models import Application, AuthInvite, Manufacturer, User
 
-def new_user(client):
-    response = client.post("api/users/", json={
+def new_user(authenticated_client):
+    response = authenticated_client.post("api/users/", json={
         "username": "testuser",
         "email": "testuser@example.com",
         "password": "pass123password"
@@ -9,8 +9,10 @@ def new_user(client):
     return response
 
 
-def test_create_user(client,db):
-    response = new_user(client)
+def test_create_user(authenticated_client_for_email):
+    email="admin@example.com"
+    authenticated_client = authenticated_client_for_email(email)
+    response = new_user(authenticated_client)
     assert response.status_code == 200
     data = response.json()
 
@@ -18,9 +20,11 @@ def test_create_user(client,db):
     assert data["email"] == "testuser@example.com"
 
 
-def test_create_user_double(client):
-    response = new_user(client)
-    response = new_user(client)
+def test_create_user_double(authenticated_client_for_email):
+    email="admin@example.com"
+    authenticated_client = authenticated_client_for_email(email)
+    response = new_user(authenticated_client)
+    response = new_user(authenticated_client)
     assert response.status_code == 400
     data = response.json()
     assert data["detail"] == "User already exists"
@@ -103,8 +107,10 @@ def test_get_user_user(authenticated_client_for_email):
     data = response.json()
 
 
-def test_update_user(client):
-    response = new_user(client)
+def test_update_user(client,authenticated_client_for_email):
+    email="admin@example.com"
+    authenticated_client = authenticated_client_for_email(email)
+    response = new_user(authenticated_client)
     user_id = response.json()["id"]
     response = client.put(f"api/users/{user_id}", json={
         "username": "updateuser",
@@ -221,3 +227,92 @@ def test_change_password_wrong_otp(authenticated_client_for_email):
     assert response.status_code == 401
     data = response.json()
     assert data["detail"] == "Invalid credentials"
+
+def test_register(client):
+    payload = {
+        "username": "demo",
+        "email": "test3@example.com",
+        "password": "testpassword1234",
+        "invite": "invite1"
+    }
+
+    response = client.post("/api/users/register", json=payload)
+    data = response.json()
+    assert response.status_code == 200
+    assert data["user"]["username"] == "demo"
+    assert data["user"]["email"] == "test3@example.com"
+    assert data["totp_uri"].startswith("otpauth://totp/")
+
+def test_register_existing_entries(client):
+    payload = {
+        "username": "demo",
+        "email": "admin@example.com",
+        "password": "testpassword1234",
+        "invite": "invite1"
+    }
+
+    response = client.post("/api/users/register", json=payload)
+    data = response.json()
+    print(data)
+    assert response.status_code == 400
+    assert data["detail"] == "Email already taken"
+
+    payload = {
+        "username": "user",
+        "email": "test3@example.com",
+        "password": "testpassword1234",
+        "invite": "invite1"
+    }
+
+    response = client.post("/api/users/register", json=payload)
+    data = response.json()
+    print(data)
+    assert response.status_code == 400
+    assert data["detail"] == "Username already taken"
+
+
+def test_register_invalid_invite(client):
+    payload = {
+       "username": "demo",
+        "email": "test3@example.com",
+        "password": "testpassword1234",
+        "invite": "invalid"
+    }
+    
+    response = client.post("/api/users/register", json=payload)
+    data = response.json()
+    print(data)
+    assert response.status_code == 400
+    assert data["detail"] == "Invalid or expired invite code"
+
+    payload = {
+        "username": "demo",
+        "email": "test3@example.com",
+        "password": "testpassword1234",
+        "invite": "invite2"
+    }
+
+    response = client.post("/api/users/register", json=payload)
+    data = response.json()
+    print(data)
+    assert response.status_code == 400
+    assert data["detail"] == "Invalid or expired invite code"
+
+def test_register_SpecialInvite(client, db):
+    payload = {
+        "username": "demo1",
+        "email": "test4@example.com",
+        "password": "testpassword1234",
+        "invite": "SpecialInvite"
+    }
+
+    response = client.post("/api/users/register", json=payload)
+    data = response.json()
+    assert response.status_code == 200
+    assert data["user"]["username"] == "demo1"
+    assert data["user"]["email"] == "test4@example.com"
+    assert data["totp_uri"].startswith("otpauth://totp/")
+
+    user = db.query(User).filter(User.email == "test4@example.com").first()
+    assert user is not None
+    assert user.is_admin is True

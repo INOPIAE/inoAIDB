@@ -3,9 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.api.endpoints import auth, manufacturers, users, applications
-from app.database import init_db
+from app.database import init_db, SessionLocal
+from app.init_data import ensure_default_invite_exists  # NEU
 import asyncio
-
 
 app = FastAPI(
     title="inoAIDB API",
@@ -27,7 +27,6 @@ settings = get_settings()
 print(f"🔧 Loaded environment: {settings.env}")
 print(f"📦 DB: {settings.database_url}")
 
-
 # API-Routen
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
@@ -38,3 +37,10 @@ app.include_router(applications.router, prefix="/api/applications", tags=["appli
 @app.on_event("startup")
 async def startup():
     init_db()
+
+    if settings.env != "test":
+        db = SessionLocal()
+        try:
+            ensure_default_invite_exists(db)
+        finally:
+            db.close()

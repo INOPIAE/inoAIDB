@@ -32,6 +32,15 @@ class User(Base):
 
 #     user = relationship("User", back_populates="auth_tokens")
 
+class AuthInvite(Base):
+    __tablename__ = 'auth_invites'
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    code = Column(String, unique=True, nullable=False)
+    use_count = Column(Integer, default=0)
+    use_max = Column(Integer, nullable=False, default=1)
+    created = Column(TIMESTAMP(timezone=True), server_default=func.now())
+
 
 class Manufacturer(Base):
     __tablename__ = "manufacturers"
