@@ -14,7 +14,7 @@ config.read(config_path)
 
 
 host = config.get("server", "host", fallback="127.0.0.1")
-port = config.get("server", "port", fallback="8000")
+port = config.get("server", "port_backend", fallback="8000")
 log_level = config.get("server", "log_level", fallback="info")
 
 backend_dir = Path(__file__).resolve().parent / "backend"
