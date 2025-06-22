@@ -14,16 +14,22 @@ app = FastAPI(
     docs_url="/docs"
 )
 
+settings = get_settings()
+
+origins = [
+    "http://localhost:5173",
+    f"http://{settings.public_ip}:{settings.port_frontend}",
+]
+
 # CORS für das Frontend (localhost:5173 = Vite)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
 )
 
-settings = get_settings()
 print(f"🔧 Loaded environment: {settings.env}")
 print(f"📦 DB: {settings.database_url}")
 

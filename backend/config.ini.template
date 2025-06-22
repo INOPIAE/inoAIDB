@@ -1,7 +1,9 @@
 [server]
 host = 0.0.0.0
-port = 8000
+port_backend = 8000
+port_frontend = 5173
 log_level = debug
+public_ip = 0.0.0.0
 
 [db]
 db_host=localhost

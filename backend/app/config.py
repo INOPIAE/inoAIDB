@@ -34,6 +34,13 @@ class Settings:
         self.jwt_algorithm = jwt_section["jwt_algorithm"]
         self.jwt_expire_minutes = int(jwt_section["jwt_expire_minutes"])
 
+        server_section = parser["server"]
+        self.host = server_section["host"]
+        self.port_backend = server_section["port_backend"]
+        self.port_frontend = server_section["port_frontend"]
+        self.log_level = server_section["log_level"]
+        self.public_ip = server_section["public_ip"]
+
     def get_db_url(self) -> str:
         return f"postgresql://{self.db_user}:{self.db_password}@{self.db_host}/{self.db_name}"
 
