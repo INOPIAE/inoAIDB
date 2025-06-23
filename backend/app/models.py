@@ -60,9 +60,33 @@ class Application(Base):
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     manufacturer_id = Column(Integer, ForeignKey("manufacturers.id"))
+    languagemodel_id = Column(Integer, ForeignKey("language_models.id"))
+    modelchoice_id = Column(Integer, ForeignKey("model_choices.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     is_active = Column(Boolean, default=True)
 
     manufacturer = relationship("Manufacturer", back_populates="applications")
+    languagemodel = relationship("LanguageModel", back_populates="applications")
+    modelchoice = relationship("ModelChoice", back_populates="applications")
+
+class LanguageModel(Base):
+    __tablename__ = "language_models"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    is_active = Column(Boolean, default=True)
+
+    applications = relationship("Application", back_populates="languagemodel")
+
+
+class ModelChoice(Base):
+    __tablename__ = "model_choices"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+
+    applications = relationship("Application", back_populates="modelchoice")

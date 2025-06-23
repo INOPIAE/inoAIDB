@@ -133,6 +133,8 @@ class ApplicationBase(BaseModel):
     name: str
     description: Optional[str] = None
     manufacturer_id: int
+    languagemodel_id: int
+    modelchoice_id : int
     is_active: bool = True
 
 class CreateApplication(ApplicationBase):
@@ -153,6 +155,46 @@ class ApplicationWithManufacturerOut(BaseModel):
     is_active: bool
     manufacturer_id: int
     manufacturer_name: str
+    languagemodel_name: str
+    modelchoice_name: str
+
+    class Config:
+        orm_mode = True
+
+
+# LanguageModel
+class LanguageModelBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    is_active: Optional[bool] = True
+
+class LanguageModelCreate(LanguageModelBase):
+    pass
+
+class LanguageModelUpdate(LanguageModelBase):
+    pass
+
+class LanguageModelOut(LanguageModelBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+# Model Choice
+class ModelChoiceBase(BaseModel):
+    name: str
+
+class ModelChoiceCreate(ModelChoiceBase):
+    pass
+
+class ModelChoiceUpdate(BaseModel):
+    name: str | None = None
+
+class ModelChoiceOut(ModelChoiceBase):
+    id: int
 
     class Config:
         orm_mode = True

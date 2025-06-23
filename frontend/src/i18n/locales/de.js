@@ -76,4 +76,11 @@ export default {
   created: 'Einladung erstellt',
   loginFailed: 'Login fehlgeschlagen. Bitte versuchen Sie es erneut.',
   pleaseLoginToContinue: 'Bitte melden Sie sich an, um fortzufahren.',
+  languageModels: 'Sprachmodelle',
+  languageModel: 'Sprachmodell',
+  modelChoice: 'Nutzung',
+  mc_unknown: 'unbekannt',
+  mc_web: 'Netz',
+  mc_company: 'Firma',
+  mc_web_company: 'Firma/Netz',
 }

@@ -25,7 +25,9 @@
       item-value="id"
       class="elevation-1"
     >
-
+    <template v-slot:item.modelchoice_name="{ item }">
+        {{$t( "mc_" + item.modelchoice_name )}}
+    </template>
       <template v-slot:item.is_active="{ item }" v-if="authStore.isAuthenticated">
         <span>{{ item.is_active ? $t('yes') : $t('no') }}</span>
       </template>
@@ -50,6 +52,20 @@
             item-title="name"
             item-value="id"
             :label="$t('manufacturer')"
+          />
+          <v-select
+            v-model="form.languagemodel_id"
+            :items="languageModels"
+            item-title="name"
+            item-value="id"
+            :label="$t('languageModel')"
+          />
+          <v-select
+            v-model="form.modelchoice_id"
+            :items="modelChoices"
+            :item-title="translateModelChoice"
+            item-value="id"
+            :label="$t('modelChoice')"
           />
           <v-switch v-model="form.is_active" :label="$t('activeQuestion')" />
         </v-card-text>
@@ -76,11 +92,15 @@ const applications = ref([])
 const manufacturers = ref([])
 const dialog = ref(false)
 const selectedManufacturer = ref(null)
+const languageModels = ref([])
+const modelChoices = ref([])
 
 const headers = computed(() => [
   { title: t('name'), key: 'name' },
   { title: t('description'), key: 'description' },
   { title: t('manufacturer'), key: 'manufacturer_name' },
+  { title: t('languagemodel'), key: 'languagemodel_name' },
+  { title: t('modelchoice'), key: 'modelchoice_name' },
   { title: t('active'), key: 'is_active' },
   { title: t('actions'), key: 'actions', sortable: false },
 ])
@@ -90,7 +110,9 @@ const visibleHeaders = computed(() => {
   let base = [
     { title: t('name'), key: 'name' },
     { title: t('description'), key: 'description' },
-    { title: t('manufacturer'), key: 'manufacturer_name' }
+    { title: t('manufacturer'), key: 'manufacturer_name' },
+    { title: t('languageModel'), key: 'languagemodel_name' },
+    { title: t('modelChoice'), key: 'modelchoice_name' },
   ]
 
   if (authStore.isAuthenticated) {
@@ -125,6 +147,8 @@ const form = ref({
   name: '',
   description: '',
   manufacturer_id: null,
+  languagemodel_id: null,
+  modelchoice_id: null,
   is_active: true,
 })
 
@@ -138,6 +162,19 @@ const loadManufacturers = async () => {
   manufacturers.value = res.data
 }
 
+const loadLanguageModels = async () => {
+  const res = await axios.get('/api/languagemodels/')
+  languageModels.value = res.data
+}
+
+const loadModelChoices = async () => {
+  const res = await axios.get('/api/modelchoices/')
+  modelChoices.value = res.data
+}
+
+function translateModelChoice(item) {
+  return t(`mc_${item.name}`) || item.name
+}
 const openDialog = (item = null) => {
   if (item) {
     form.value = { ...item }
@@ -147,6 +184,8 @@ const openDialog = (item = null) => {
       name: '',
       description: '',
       manufacturer_id: null,
+      languagemodel_id: null,
+      modelchoice_id: null,
       is_active: true,
     }
   }
@@ -160,6 +199,9 @@ const closeDialog = () => {
 const submit = async () => {
   try {
     const config = { headers: authStore.authHeader }
+    form.value.languagemodel_id = Number(form.value.languagemodel_id)
+    form.value.modelchoice_id = Number(form.value.modelchoice_id)
+    console.log('Submit form:', form.value)
     if (form.value.id) {
       await axios.put(`/api/applications/${form.value.id}`, form.value, config)
     } else {
@@ -175,5 +217,7 @@ const submit = async () => {
 onMounted(() => {
   loadApplications()
   loadManufacturers()
+  loadLanguageModels()
+  loadModelChoices()
 })
 </script>

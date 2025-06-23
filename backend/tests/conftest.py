@@ -10,7 +10,7 @@ from app import auth, models
 from app.config import get_settings
 from app.database import Base, get_db
 from app.main import app
-from app.models import Application, AuthInvite, Manufacturer, User
+from app.models import Application, AuthInvite, Manufacturer, User, LanguageModel, ModelChoice
 
 
 @pytest.fixture(scope="session")
@@ -28,12 +28,16 @@ def alembic_config():
     return alembic_cfg
 
 
-@pytest.fixture(scope="function")
-def run_migrations(engine, alembic_config):
-    command.downgrade(alembic_config, "base")
-    command.upgrade(alembic_config, "head")
-    yield
+# @pytest.fixture(scope="function")
+# def run_migrations(engine, alembic_config):
+#     command.downgrade(alembic_config, "base")
+#     command.upgrade(alembic_config, "head")
+#     yield
 
+@pytest.fixture(scope="session", autouse=True)
+def run_migrations(alembic_config):
+    # Nur einmal pro Testsuite auf HEAD bringen
+    command.upgrade(alembic_config, "head")
 
 @pytest.fixture(scope="function")
 def db(engine, run_migrations):
@@ -59,12 +63,17 @@ def client(db):
 def setup_test_data(db):
     db.query(AuthInvite).delete()
     db.query(User).delete()
+
     db.query(Application).delete()
+    db.query(LanguageModel).delete()
+    db.query(ModelChoice).delete()
     db.query(Manufacturer).delete()
     db.commit()
 
     db.execute(text("ALTER SEQUENCE users_id_seq RESTART WITH 1"))
     db.execute(text("ALTER SEQUENCE manufacturers_id_seq RESTART WITH 1"))
+    db.execute(text("ALTER SEQUENCE language_models_id_seq RESTART WITH 1"))
+    db.execute(text("ALTER SEQUENCE model_choices_id_seq RESTART WITH 1"))
     db.execute(text("ALTER SEQUENCE applications_id_seq RESTART WITH 1"))
 
     user1 = User(username="admin", email="admin@example.com", hashed_password=auth.pwd_context.hash("passwordpassword"), is_admin=True, totp_secret=auth.generate_totp_secret())
@@ -74,15 +83,21 @@ def setup_test_data(db):
     man1 = Manufacturer(name="Microsoft", description="Tech", is_active=True)
     man2 = Manufacturer(name="Apple", description="Tech", is_active=True)
 
-    app1 = Application(name="Office", description="software", manufacturer_id=1, is_active=True)
-    app2 = Application(name="Visual Studio Code", description="software", manufacturer_id=1, is_active=True)
-    app3 = Application(name="Alexa", description="software", manufacturer_id=2, is_active=True)
+    lm1 = LanguageModel(name="unknown", description="", is_active=True)
+    lm2 = LanguageModel(name="ChatGPT", description="", is_active=True)
+
+    mc1 = ModelChoice(name="unknown")
+    mc2 = ModelChoice(name="web")
+
+    app1 = Application(name="Office", description="software", manufacturer_id=1, languagemodel_id = 1, modelchoice_id = 1, is_active=True)
+    app2 = Application(name="Visual Studio Code", description="software", manufacturer_id=1, languagemodel_id = 1, modelchoice_id = 1,is_active=True)
+    app3 = Application(name="Alexa", description="software", manufacturer_id=2, languagemodel_id = 1, modelchoice_id = 1, is_active=True)
 
     inv1 = AuthInvite(code = "SpecialInvite", use_count = 0, use_max = 1)
     inv2 = AuthInvite(code = "invite1", use_count = 1, use_max = 2)
     inv3 = AuthInvite(code = "invite2", use_count = 1, use_max = 1)
 
-    db.add_all([user1, user2, user3, man1, man2, app1, app2, app3, inv1, inv2, inv3])
+    db.add_all([user1, user2, user3, man1, man2, lm1, lm2, mc1, mc2, app1, app2, app3, inv1, inv2, inv3])
     db.commit()
     yield
     db.close()

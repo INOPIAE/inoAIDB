@@ -11,6 +11,7 @@ import AdminUsersView from '@/views/AdminUsersView.vue'
 import UserProfileView from '@/views/UserProfileView.vue'
 import RegisterView from '@/views/RegisterView.vue'
 import InviteView from '@/views/InviteView.vue'
+import LanguageModelView from '@/views/LanguageModelView.vue'
 
 import { useAuthStore } from '@/stores/auth'
 import { storeToRefs } from 'pinia'
@@ -28,6 +29,7 @@ const routes = [
   { path: '/userprofile', component: UserProfileView, meta: { requiresAuth: true } },
   { path: '/register', component: RegisterView },
   { path: '/invite', component: InviteView, meta: { requiresAuth: true } },
+  { path: '/languagemodel', component: LanguageModelView, meta: { requiresAuth: true } },
 ]
 
 const router = createRouter({

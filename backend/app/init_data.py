@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.models import AuthInvite
+from app.models import AuthInvite, ModelChoice
 
 def ensure_default_invite_exists(db: Session):
     existing = db.query(AuthInvite).first()
@@ -10,3 +10,23 @@ def ensure_default_invite_exists(db: Session):
         print(f"Invite created: {invite.code}")
     else:
         print(f"Invite existing {existing.code}")
+    existing = db.query(ModelChoice).first()
+    if not existing:
+        mc = ModelChoice(name="unknown")
+        db.add(mc)
+        db.commit()
+        print(f"Model choice created: {mc.name}")
+        mc = ModelChoice(name="web")
+        db.add(mc)
+        db.commit()
+        print(f"Model choice created: {mc.name}")
+        mc = ModelChoice(name="company")
+        db.add(mc)
+        db.commit()
+        print(f"Model choice created: {mc.name}")
+        mc = ModelChoice(name="web_company")
+        db.add(mc)
+        db.commit()
+        print(f"Model choice created: {mc.name}")
+    else:
+        print(f"Model choice existing {existing.name}")
