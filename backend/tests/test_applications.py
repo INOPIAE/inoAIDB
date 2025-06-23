@@ -3,6 +3,8 @@ def new_application(authenticated_client):
         "name": "Test Application",
         "description": "This is a test.",
         "manufacturer_id": 1,
+        "languagemodel_id": 1,
+        "modelchoice_id": 1,
         "is_active": True
     })
 
@@ -11,7 +13,6 @@ def new_application(authenticated_client):
 def test_create_application(authenticated_client_for_email):
     authenticated_client = authenticated_client_for_email("admin@example.com")
     response = new_application(authenticated_client)
-
     assert response.status_code == 200, response.text
     data = response.json()
     assert data["name"] == "Test Application"
@@ -27,17 +28,43 @@ def test_create_application_duplicate(authenticated_client_for_email):
     data = response.json()
     assert data["detail"] == "Application already exists"
 
-def test_create_application_wrong_maufacturer(authenticated_client_for_email):
+def test_create_application_wrong_data(authenticated_client_for_email):
     authenticated_client = authenticated_client_for_email("admin@example.com")
     response = authenticated_client.post("api/applications/", json={
         "name": "Test Application1",
         "description": "This is a test.",
         "manufacturer_id": 999999,
+        "languagemodel_id": 1,
+        "modelchoice_id": 1,
         "is_active": True
     })
     assert response.status_code == 400
     data = response.json()
     assert data["detail"] == "Manufacturer not found"
+
+    response = authenticated_client.post("api/applications/", json={
+        "name": "Test Application1",
+        "description": "This is a test.",
+        "manufacturer_id": 1,
+        "languagemodel_id": 999999,
+        "modelchoice_id": 1,
+        "is_active": True
+    })
+    assert response.status_code == 400
+    data = response.json()
+    assert data["detail"] == "Language model not found"
+
+    response = authenticated_client.post("api/applications/", json={
+        "name": "Test Application1",
+        "description": "This is a test.",
+        "manufacturer_id": 1,
+        "languagemodel_id": 1,
+        "modelchoice_id": 99999,
+        "is_active": True
+    })
+    assert response.status_code == 400
+    data = response.json()
+    assert data["detail"] == "Model choice not found"
 
 def test_get_applications(client):
     response = client.get("/api/applications/")
@@ -74,12 +101,17 @@ def test_update_application(authenticated_client_for_email):
         "name": "Updated Application",
         "description": "Updated description",
         "manufacturer_id": 2,
+        "languagemodel_id": 2,
+        "modelchoice_id": 2,
         "is_active": False
     })
     assert response.status_code == 200
     data = response.json()
     assert data["name"] == "Updated Application"
     assert data["description"] == "Updated description"
+    assert data["manufacturer_id"] == 2
+    assert data["languagemodel_id"] == 2
+    assert data["modelchoice_id"] == 2
     assert data["is_active"] is False
 
 
@@ -90,13 +122,15 @@ def test_update_application_not_found(authenticated_client_for_email):
         "name": "Does Not Exist",
         "description": "Should fail",
         "manufacturer_id": 1,
+        "languagemodel_id": 1,
+        "modelchoice_id": 1,
         "is_active": True
     })
     assert response.status_code == 404
     data = response.json()
     assert data["detail"] == "Application not found"
 
-def test_update_application_wrong_maufacturer(authenticated_client_for_email):
+def test_update_application_wrong_data(authenticated_client_for_email):
     authenticated_client = authenticated_client_for_email("admin@example.com")
     response = new_application(authenticated_client)
     application_id = response.json()["id"]
@@ -104,11 +138,37 @@ def test_update_application_wrong_maufacturer(authenticated_client_for_email):
         "name": "Updated Application",
         "description": "Updated description",
         "manufacturer_id": 9999999,
+        "languagemodel_id": 1,
+        "modelchoice_id": 1,
         "is_active": False
     })
     assert response.status_code == 400
     data = response.json()
     assert data["detail"] == "Manufacturer not found"
+
+    response = authenticated_client.put(f"api/applications/{application_id}", json={
+        "name": "Updated Application",
+        "description": "Updated description",
+        "manufacturer_id": 1,
+        "languagemodel_id": 999999,
+        "modelchoice_id": 1,
+        "is_active": True
+    })
+    assert response.status_code == 400
+    data = response.json()
+    assert data["detail"] == "Language model not found"
+
+    response = authenticated_client.put(f"api/applications/{application_id}", json={
+        "name": "Updated Application",
+        "description": "Updated description",
+        "manufacturer_id": 1,
+        "languagemodel_id": 1,
+        "modelchoice_id": 99999,
+        "is_active": True
+    })
+    assert response.status_code == 400
+    data = response.json()
+    assert data["detail"] == "Model choice not found"
 
 
 def test_get_applications_by_manufacturer(authenticated_client_for_email):

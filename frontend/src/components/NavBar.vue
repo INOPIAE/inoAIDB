@@ -120,6 +120,13 @@ export default {
                 level: 1,
             },
             {
+                title: 'languageModels',
+                icon: `mdi-account-supervisor`,
+                href: '/languagemodel',
+                condition: () => authStore.isAuthenticated && authStore.user?.is_admin,
+                level: 1,
+            },
+            {
                 style: 'divider',
             },
             {

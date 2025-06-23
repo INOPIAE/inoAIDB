@@ -76,4 +76,11 @@ export default {
   created: 'Invitation created',
   loginFailed: 'Login failed. Please try again.',
   pleaseLoginToContinue: 'Please log in to continue.',
+  languageModels: 'Language models',
+  languageModel: 'Language model',
+  modelChoice: 'Usage',
+  mc_unknown: 'unknown',
+  mc_web: 'web',
+  mc_company: 'company',
+  mc_web_company: 'web/company',
 }
