@@ -8,7 +8,7 @@ import 'flag-icons/css/flag-icons.min.css'
 
 import vuetify from './plugins/vuetify'
 
-axios.defaults.baseURL = 'http://localhost:8000'
+axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL
 axios.defaults.withCredentials = false
 
 const app = createApp(App)
