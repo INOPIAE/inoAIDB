@@ -91,7 +91,7 @@ def setup_test_data(db):
 
     app1 = Application(name="Office", description="software", manufacturer_id=1, languagemodel_id = 1, modelchoice_id = 1, is_active=True)
     app2 = Application(name="Visual Studio Code", description="software", manufacturer_id=1, languagemodel_id = 1, modelchoice_id = 1,is_active=True)
-    app3 = Application(name="Alexa", description="software", manufacturer_id=2, languagemodel_id = 1, modelchoice_id = 1, is_active=True)
+    app3 = Application(name="Alexa", description="software", manufacturer_id=2, languagemodel_id = 1, modelchoice_id = 1, is_active=False)
 
     inv1 = AuthInvite(code = "SpecialInvite", use_count = 0, use_max = 1)
     inv2 = AuthInvite(code = "invite1", use_count = 1, use_max = 2)

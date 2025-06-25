@@ -199,13 +199,36 @@ def test_get_applications_by_manufacturer_wrong(client):
     assert data["detail"] == "Manufacturer not found"
 
 
-def test_get_applications_with_manufacturer(client):
+def test_get_active_applications_with_manufacturer(client):
     response = client.get("/api/applications/with-manufacturer")
     assert response.status_code == 200
 
     data = response.json()
     assert isinstance(data, list)
+    assert len(data) == 2
     for app in data:
         assert app["is_active"] is True
         assert "manufacturer_id" in app
         assert "manufacturer_name" in app
+        assert "languagemodel_name" in app
+        assert "modelchoice_name" in app
+
+def test_get_applications_with_manufacturer(authenticated_client_for_email):
+    authenticated_client = authenticated_client_for_email("admin@example.com")
+    response = authenticated_client.get("/api/applications/with-manufacturer-admin")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) == 3
+
+def test_get_applications_with_manufacturer_no_login(client):
+    response = client.get("/api/applications/with-manufacturer-admin")
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"
+
+def test_get_applications_with_manufacturer_no_login(authenticated_client_for_email):
+    authenticated_client = authenticated_client_for_email("user@example.com")
+    response = authenticated_client.get("/api/applications/with-manufacturer-admin")
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Not authorized to access this data"
