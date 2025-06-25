@@ -41,7 +41,7 @@ export default {
     setup() {
         const authStore = useAuthStore();
         const { t } = useI18n()
-
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
         const items = computed(() => [
             {
                 title: 'home',
@@ -133,7 +133,7 @@ export default {
                 title: 'apiDocumentation',
                 style: 'external',
                 icon: 'mdi-api',
-                href: 'http://localhost:8000/docs',
+                href: `${backendUrl}/docs`,
                 condition:  null,
             },
             {

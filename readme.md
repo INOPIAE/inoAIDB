@@ -20,23 +20,25 @@
     Create private key (e.g. via openssl or xca) and place the base64-encoded DER as secret without line breaks.
 1. Start `start_app.py` within folder where it is located with `python3 ./start_app`. This ensures that the path `./frontend/dist/` is valid.
 
-    If the configuaration file `myapp.ini` is not stored next to `myapp.py` start with `python3 .\myapp.py --config PathTo\myapp.ini`
+TBD    If the configuaration file `config.ini` is not stored next to `myapp.py` start with `python3 .\myapp.py --config PathTo\myapp.ini`
 1. If application startup is successful the database will be populated with an empty schema and the web interface will become available after a few seconds at `http://localhost:8000`.
 1. In a production environment the web application should be used behind a reverse proxy to hold static assets in its cache and improve system performance.
 
 ### Setup for development
 
 1. Create database in PostgreSQL
-1. Create `myapp.ini` (see abvove)
+1. Create `config.ini` (see abvove)
 1. Open workfolder
 1. Create environment
 1. Open terminal
 1. `python3 -m pip install -r PyKeyInfoService/requirements.txt`
+1. `cd ./backend/`
+1. `python3 app/generate_frontend_env.py`
+1. `cd ..`
 1. `cd ./frontend/`
 1. `npm install`
 1. `npm run build`
 1. `cd ..`
-1. `cd ./frontend/`
 1. `python3 ./start_app.py`
 
 ### Initialise database
