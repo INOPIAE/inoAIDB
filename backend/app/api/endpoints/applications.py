@@ -82,13 +82,56 @@ def get_active_applications_with_manufacturer(db: Session = Depends(get_db)):
             "is_active": r.is_active,
             "manufacturer_id": r.manufacturer_id,
             "manufacturer_name": r.manufacturer_name,
+            "languagemodel_id": r.languagemodel_id,
             "languagemodel_name": r.languagemodel_name,
+            "modelchoice_id": r.modelchoice_id,
             "modelchoice_name": r.modelchoice_name,
         }
         for r in rows
     ]
     return result
 
+@router.get("/with-manufacturer-admin", response_model=List[ApplicationWithManufacturerOut])
+def get_applications_with_manufacturer(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized to access this data")
+
+    rows = (
+        db.query(
+            Application.id,
+            Application.name,
+            Application.description,
+            Application.is_active,
+            Application.manufacturer_id,
+            Manufacturer.name.label("manufacturer_name"),
+            Application.languagemodel_id,
+            LanguageModel.name.label("languagemodel_name"),
+            Application.modelchoice_id,
+            ModelChoice.name.label("modelchoice_name"),
+        )
+        .join(Manufacturer, Application.manufacturer_id == Manufacturer.id)
+        .join(LanguageModel, Application.languagemodel_id == LanguageModel.id)
+        .join(ModelChoice, Application.modelchoice_id == ModelChoice.id)
+        .order_by(Application.name.asc())
+        .all()
+    )
+
+    result = [
+        {
+            "id": r.id,
+            "name": r.name,
+            "description": r.description,
+            "is_active": r.is_active,
+            "manufacturer_id": r.manufacturer_id,
+            "manufacturer_name": r.manufacturer_name,
+            "languagemodel_id": r.languagemodel_id,
+            "languagemodel_name": r.languagemodel_name,
+            "modelchoice_id": r.modelchoice_id,
+            "modelchoice_name": r.modelchoice_name,
+        }
+        for r in rows
+    ]
+    return result
 
 @router.get("/{application_id}", response_model=ApplicationOut)
 def get_application(application_id: int, db: Session = Depends(get_db)):

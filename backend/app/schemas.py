@@ -155,7 +155,9 @@ class ApplicationWithManufacturerOut(BaseModel):
     is_active: bool
     manufacturer_id: int
     manufacturer_name: str
+    languagemodel_id: int
     languagemodel_name: str
+    modelchoice_id: int
     modelchoice_name: str
 
     class Config:

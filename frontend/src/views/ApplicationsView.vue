@@ -153,8 +153,18 @@ const form = ref({
 })
 
 const loadApplications = async () => {
-  const res = await axios.get('/api/applications/with-manufacturer')
-  applications.value = res.data
+    try {
+    const url = authStore.isAuthenticated && authStore.user?.is_admin
+      ? '/api/applications/with-manufacturer-admin'
+      : '/api/applications/with-manufacturer'
+
+    const config = authStore.isAuthenticated ? { headers: authStore.authHeader } : {}
+
+    const res = await axios.get(url, config)
+    applications.value = res.data
+  } catch (e) {
+    console.error('Error loading applications:', e)
+  }
 }
 
 const loadManufacturers = async () => {
