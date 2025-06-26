@@ -233,7 +233,8 @@ def test_register(client):
         "username": "demo",
         "email": "test3@example.com",
         "password": "testpassword1234",
-        "invite": "invite1"
+        "invite": "invite1",
+        "accept_terms": True,
     }
 
     response = client.post("/api/users/register", json=payload)
@@ -248,12 +249,12 @@ def test_register_existing_entries(client):
         "username": "demo",
         "email": "admin@example.com",
         "password": "testpassword1234",
-        "invite": "invite1"
+        "invite": "invite1",
+        "accept_terms": True,
     }
 
     response = client.post("/api/users/register", json=payload)
     data = response.json()
-    print(data)
     assert response.status_code == 400
     assert data["detail"] == "Email already taken"
 
@@ -261,12 +262,12 @@ def test_register_existing_entries(client):
         "username": "user",
         "email": "test3@example.com",
         "password": "testpassword1234",
-        "invite": "invite1"
+        "invite": "invite1",
+        "accept_terms": True,
     }
 
     response = client.post("/api/users/register", json=payload)
     data = response.json()
-    print(data)
     assert response.status_code == 400
     assert data["detail"] == "Username already taken"
 
@@ -276,12 +277,12 @@ def test_register_invalid_invite(client):
        "username": "demo",
         "email": "test3@example.com",
         "password": "testpassword1234",
-        "invite": "invalid"
+        "invite": "invalid",
+        "accept_terms": True,
     }
     
     response = client.post("/api/users/register", json=payload)
     data = response.json()
-    print(data)
     assert response.status_code == 400
     assert data["detail"] == "Invalid or expired invite code"
 
@@ -289,12 +290,12 @@ def test_register_invalid_invite(client):
         "username": "demo",
         "email": "test3@example.com",
         "password": "testpassword1234",
-        "invite": "invite2"
+        "invite": "invite2",
+        "accept_terms": True,
     }
 
     response = client.post("/api/users/register", json=payload)
     data = response.json()
-    print(data)
     assert response.status_code == 400
     assert data["detail"] == "Invalid or expired invite code"
 
@@ -303,7 +304,8 @@ def test_register_SpecialInvite(client, db):
         "username": "demo1",
         "email": "test4@example.com",
         "password": "testpassword1234",
-        "invite": "SpecialInvite"
+        "invite": "SpecialInvite",
+        "accept_terms": True,
     }
 
     response = client.post("/api/users/register", json=payload)
@@ -316,3 +318,18 @@ def test_register_SpecialInvite(client, db):
     user = db.query(User).filter(User.email == "test4@example.com").first()
     assert user is not None
     assert user.is_admin is True
+
+def test_register_missing_Accept(client):
+    payload = {
+        "username": "demo",
+        "email": "test3@example.com",
+        "password": "testpassword1234",
+        "invite": "invite1",
+        "accept_terms": False,
+    }
+
+    response = client.post("/api/users/register", json=payload)
+    data = response.json()
+    print(data) 
+    assert response.status_code == 400
+    assert data["detail"] == "Missing accepted terms"

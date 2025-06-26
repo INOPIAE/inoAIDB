@@ -84,4 +84,7 @@ export default {
   mc_company: 'company',
   mc_web_company: 'web/company',
   footerText: "{project} © {year} {company}, powered by {powered}",
+  acceptTos: "I accept the {tos}.",
+  tosLinkText: "Terms of Service",
+  pleaseAcceptTos: "Please accept the Terms of Service",
 }

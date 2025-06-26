@@ -21,6 +21,11 @@
         v-model="form.invite"
         :label="t('invite')"
       />
+      <v-checkbox v-model="form.accept_terms">
+        <template #label>
+          <span v-html="tosLabel" />
+        </template>
+      </v-checkbox>
       <v-btn color="primary" @click="register">
         {{ t('submitRegister') }}
       </v-btn>
@@ -51,14 +56,23 @@ const { t } = useI18n()
 const router = useRouter()
 const totpUri = ref(null)
 
+const tosUrl = import.meta.env.VITE_TOS || '/tos'
+const tosLinkHtml = `<a href="${tosUrl}" target="_blank">${t('tosLinkText')}</a>`
+const tosLabel = t('acceptTos', { tos: tosLinkHtml })
+
 const form = ref({
   username: '',
   email: '',
   password: '',
   invite: '',
+  accept_terms: false,
 })
 
 const register = async () => {
+  if (!form.value.accept_terms) {
+    alert(t('pleaseAcceptTos'))
+    return
+  }
   try {
     const res = await axios.post('/api/users/register', form.value)
     totpUri.value = res.data.totp_uri
