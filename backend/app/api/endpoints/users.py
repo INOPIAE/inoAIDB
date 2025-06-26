@@ -107,8 +107,9 @@ def change_password(request: ChangePasswordRequest, current_user: User = Depends
 
 
 @router.post("/register", response_model=RegisterResponse)
-#def register(request: RegisterRequest, db: Session = Depends(get_db), cfg: Settings = Depends(get_settings)):
 def register(request: RegisterRequest, db: Session = Depends(get_db)):
+    if not request.accept_terms:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing accepted terms")
     # Validate invite code using the validate_invite function
     invite = validate_invite(db, request.invite)
     if not invite:

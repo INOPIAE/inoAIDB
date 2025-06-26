@@ -93,6 +93,7 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=16, format="password")
     invite: str
+    accept_terms: bool = Field(..., description="User must accept terms and conditions")
 
 
 class UserResponse(BaseModel):
