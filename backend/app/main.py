@@ -7,14 +7,21 @@ from app.database import init_db, SessionLocal
 from app.init_data import ensure_default_invite_exists
 import asyncio
 
+settings = get_settings()
+
 app = FastAPI(
     title="inoAIDB API",
     version="1.0.0",
     description="inoAIDB API Documentation",
-    docs_url="/docs"
+    terms_of_service=settings.contact_tos,
+    contact={
+        "name": settings.contact_name,
+        "email": settings.contact_email,
+        "url": settings.contact_url,
+    },
+    docs_url="/docs",
 )
 
-settings = get_settings()
 
 origins = [
     "http://localhost:5173",

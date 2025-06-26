@@ -10,7 +10,12 @@
         </span>
       </div>
       <div>
-        &copy; {{ displayYear }} inoAIDB
+        {{ t('footerText', {
+          project: 'inoAIDB',
+          year: displayYear,
+          company: 'INOPIAE',
+          powered: poweredBy
+        }) }}
       </div>
     </v-container>
   </v-footer>
@@ -18,9 +23,12 @@
 
 <script setup>
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 const currentYear = new Date().getFullYear()
 const displayYear = currentYear > 2025 ? `2025-${currentYear}` : '2025'
+const poweredBy = import.meta.env.VITE_POWEREDBY || 'Unknown'
 </script>

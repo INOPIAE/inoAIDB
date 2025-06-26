@@ -17,6 +17,8 @@ def write_env_file(env_path: Path = None):
         f.write(f"VITE_BACKEND_URL=http://{settings.public_ip}:{settings.port_backend}\n")
         f.write(f"VITE_FRONTEND_PORT={settings.port_frontend}\n")
         f.write(f"VITE_HOST={settings.host}\n")
+        f.write(f"VITE_POWEREDBY={settings.poweredby}\n")
+        f.write(f"VITE_TOS={settings.contact_tos}\n")
 
     print(f".env file created in: {env_path}")
 

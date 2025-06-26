@@ -21,3 +21,13 @@ db_host=localhost
 db_name=test_inoAIDB
 db_user=inoAIDB
 db_password=testpassword
+
+[application]
+poweredby = COMPANY
+
+[contact]
+name = John Doe
+email = john.doe@domain.tld
+url = https://domain.tld/#/contact
+tos = https://domain.tld/#/tos
+privpol = https://domain.tld/#/privpol
