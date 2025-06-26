@@ -41,6 +41,16 @@ class Settings:
         self.log_level = server_section["log_level"]
         self.public_ip = server_section["public_ip"]
 
+        application_section = parser["application"]
+        self.poweredby = application_section["poweredby"]
+
+        contact_section = parser["contact"]
+        self.contact_name = contact_section["name"]
+        self.contact_email = contact_section["email"]
+        self.contact_url = contact_section["url"]
+        self.contact_tos = contact_section["tos"]
+        self.contact_privpol = contact_section["privpol"]
+
     def get_db_url(self) -> str:
         return f"postgresql://{self.db_user}:{self.db_password}@{self.db_host}/{self.db_name}"
 

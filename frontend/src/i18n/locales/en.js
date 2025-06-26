@@ -83,4 +83,5 @@ export default {
   mc_web: 'web',
   mc_company: 'company',
   mc_web_company: 'web/company',
+  footerText: "{project} © {year} {company}, powered by {powered}",
 }

@@ -83,4 +83,5 @@ export default {
   mc_web: 'Netz',
   mc_company: 'Firma',
   mc_web_company: 'Firma/Netz',
+  footerText: "{project} © {year} {company}, powered by {powered}",
 }
