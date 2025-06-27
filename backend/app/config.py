@@ -51,6 +51,12 @@ class Settings:
         self.contact_tos = contact_section["tos"]
         self.contact_privpol = contact_section["privpol"]
 
+        smtp_section = parser["SMTP"]
+        self.sender_email  = smtp_section["sender_email"]
+        self.smtp_password  = smtp_section["smtp_password"]
+        self.smtp_server  = smtp_section["smtp_server"]
+        self.smtp_port  = int(smtp_section["smtp_port"])
+
     def get_db_url(self) -> str:
         return f"postgresql://{self.db_user}:{self.db_password}@{self.db_host}/{self.db_name}"
 

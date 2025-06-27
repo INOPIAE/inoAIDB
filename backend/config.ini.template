@@ -31,3 +31,9 @@ email = john.doe@domain.tld
 url = https://domain.tld/#/contact
 tos = https://domain.tld/#/tos
 privpol = https://domain.tld/#/privpol
+
+[SMTP]
+sender_email = your_email@domain.tld
+smtp_password = your_app_password
+smtp_server = smtp.domain.tld
+smtp_port = 587
