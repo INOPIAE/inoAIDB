@@ -87,4 +87,7 @@ export default {
   acceptTos: "Ich stimme den {tos} zu.",
   tosLinkText: "Nutzungsbedingungen (TOS)",
   pleaseAcceptTos: "Bitte akzeptieren Sie die Nutzungsbedingungen.",
+  loading: "Lade Anwendungsstatistik...",
+  loadingError: "Fehler beim Laden: {error}",
+  appstats: "Die Datenbank enthält aktuell <strong>{count}</strong> Datensätze zu Anwendungen.",
 }

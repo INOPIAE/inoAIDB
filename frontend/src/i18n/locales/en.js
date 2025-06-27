@@ -87,4 +87,7 @@ export default {
   acceptTos: "I accept the {tos}.",
   tosLinkText: "Terms of Service",
   pleaseAcceptTos: "Please accept the Terms of Service",
+  loading: "Loading application statistics...",
+  loadingerror: "Error loading data: {error}",
+  appstats: "The database currently contains <strong>{count}</strong> application records.",
 }

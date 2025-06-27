@@ -232,3 +232,12 @@ def test_get_applications_with_manufacturer_no_login(authenticated_client_for_em
     response = authenticated_client.get("/api/applications/with-manufacturer-admin")
     assert response.status_code == 403
     assert response.json()["detail"] == "Not authorized to access this data"
+
+def test_get_application_stats(client):
+    response = client.get("/api/applications/stats")
+    print("Response:", response.status_code, response.text) 
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["total"] == 3
+    assert data["active"] == 2
