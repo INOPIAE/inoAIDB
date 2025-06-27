@@ -1,12 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from passlib.context import CryptContext
+import secrets
+from datetime import datetime, timedelta
 from fastapi.security import OAuth2PasswordRequestForm
 from app import schemas, models, auth
 from app.database import SessionLocal
 from app.api import deps
 import uuid
-from app.models import AuthInvite, User
+from app.models import AuthInvite, User, PasswordResetToken
 from app.api.deps import get_current_user
+from app.utils.email import send_email
+from app.config import settings
 
 router = APIRouter()
 
@@ -18,6 +23,7 @@ def get_db():
     finally:
         db.close()
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 @router.post("/login", response_model=schemas.UserOut)
 def login_user(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
@@ -100,3 +106,41 @@ def get_invite_uses_left(
         use_left=use_left
     )
 
+@router.post("/forgot-password")
+def forgot_password(email: schemas.ForgotPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == email.email).first()
+    if not user:
+        return {"message": "If the email exists, a reset link has been sent."}
+
+    token = secrets.token_urlsafe(32)
+    expires = datetime.utcnow() + timedelta(hours=1)
+
+    db_token = PasswordResetToken(user_id=user.id, token=token, expires_at=expires)
+    db.add(db_token)
+    db.commit()
+
+    reset_url = f"https://{settings.public_ip}:{settings.port_frontend}/reset-password?token={token}"
+    send_email(to=email.email, subject="Password Reset for inoAIDB", body=f"Click here: {reset_url}")
+
+    return {"message": "If the email exists, a reset link has been sent."}
+
+@router.post("/reset-password")
+def reset_password(request: schemas.PasswordResetRequest, db: Session = Depends(get_db)):
+    token_entry = (
+        db.query(PasswordResetToken)
+        .filter(PasswordResetToken.token == request.token, PasswordResetToken.used == False)
+        .first()
+    )
+    if not token_entry or token_entry.expires_at < datetime.utcnow() :
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+    user = db.query(User).filter(User.id == token_entry.user_id).first()
+
+    user.hashed_password = pwd_context.hash(request.new_password)
+    token_entry.used = True
+
+    db.commit()
+
+    user1 = db.query(User).filter(User.id == token_entry.user_id).first()
+
+    return {"message": "Password has been reset successfully."}

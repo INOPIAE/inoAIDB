@@ -10,7 +10,7 @@ from app import auth, models
 from app.config import get_settings
 from app.database import Base, get_db
 from app.main import app
-from app.models import Application, AuthInvite, Manufacturer, User, LanguageModel, ModelChoice
+from app.models import Application, AuthInvite, Manufacturer, User, LanguageModel, ModelChoice, PasswordResetToken
 
 
 @pytest.fixture(scope="session")
@@ -62,6 +62,7 @@ def client(db):
 @pytest.fixture(scope="function", autouse=True)
 def setup_test_data(db):
     db.query(AuthInvite).delete()
+    db.query(PasswordResetToken).delete()
     db.query(User).delete()
 
     db.query(Application).delete()
@@ -75,6 +76,7 @@ def setup_test_data(db):
     db.execute(text("ALTER SEQUENCE language_models_id_seq RESTART WITH 1"))
     db.execute(text("ALTER SEQUENCE model_choices_id_seq RESTART WITH 1"))
     db.execute(text("ALTER SEQUENCE applications_id_seq RESTART WITH 1"))
+    db.execute(text("ALTER SEQUENCE password_reset_tokens_id_seq RESTART WITH 1"))
 
     user1 = User(username="admin", email="admin@example.com", hashed_password=auth.pwd_context.hash("passwordpassword"), is_admin=True, totp_secret=auth.generate_totp_secret())
     user2 = User(username="user", email="user@example.com", hashed_password=auth.pwd_context.hash("passwordpassword"), is_admin=False, totp_secret=auth.generate_totp_secret())

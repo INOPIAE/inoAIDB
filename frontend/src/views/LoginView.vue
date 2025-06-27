@@ -9,10 +9,23 @@
       <v-text-field :label="t('password')" v-model="password" type="password" />
       <v-text-field :label="t('totpCode')" v-model="otp" />
 
-      <v-btn type="submit" color="primary">{{ t('login') }}</v-btn>
+      <v-btn type="submit" color="primary" class="mr-4">
+        {{ t('login') }}
+      </v-btn>
+
+      <v-btn
+        color="secondary"
+        @click="requestPasswordReset"
+      >
+        {{ t('forgotPassword') }}
+      </v-btn>
 
       <v-alert v-if="errorMessage" type="error" class="mt-4">
         {{ errorMessage }}
+      </v-alert>
+
+      <v-alert v-if="resetMessage" type="success" class="mt-4">
+        {{ resetMessage }}
       </v-alert>
     </v-form>
   </v-container>
@@ -23,6 +36,7 @@ import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import axios from 'axios'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
@@ -34,6 +48,7 @@ const password = ref('')
 const otp = ref('')
 const errorMessage = ref('')
 const infoMessage = ref('')
+const resetMessage = ref('')
 
 onMounted(() => {
   if (route.query.redirect) {
@@ -55,6 +70,26 @@ const handleLogin = async () => {
     } else {
       errorMessage.value = t('loginFailed')
     }
+  }
+}
+
+const requestPasswordReset = async () => {
+  errorMessage.value = ''
+  resetMessage.value = ''
+
+  if (!email.value) {
+    errorMessage.value = t('emailRequiredForReset')
+    return
+  }
+
+  try {
+    const response = await axios.post('/api/auth/forgot-password', {
+      email: email.value
+    })
+    resetMessage.value = t('resetLinkSent')
+  } catch (err) {
+    console.error('Password reset request failed', err)
+    errorMessage.value = t('resetLinkSent')
   }
 }
 </script>

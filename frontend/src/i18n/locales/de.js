@@ -90,4 +90,10 @@ export default {
   loading: "Lade Anwendungsstatistik...",
   loadingError: "Fehler beim Laden: {error}",
   appstats: "Die Datenbank enthält aktuell <strong>{count}</strong> Datensätze zu Anwendungen.",
+  resetPasswordTitle: 'Passwort zurücksetzen',
+  passwordRequired: 'Passwort wird benötigt',
+  reset: 'Zurücksetzen',
+  forgotPassword: "Passwort zurücksetzen",
+  emailRequiredForReset: "Bitte geben Sie Ihre E-Mail-Adresse für den Passwort-Reset ein.",
+  resetLinkSent: "Wenn die E-Mail existiert, wurde ein Link zum Zurücksetzen gesendet.",
 }
