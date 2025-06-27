@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.database import SessionLocal
-from app.schemas import ApplicationOut, ApplicationWithManufacturerOut, CreateApplication
+from app.schemas import ApplicationOut, ApplicationWithManufacturerOut, CreateApplication, ApplicationStats
 from app.models import Application, Manufacturer, User, LanguageModel, ModelChoice
 from app.api.deps import get_current_user
 
@@ -133,6 +133,12 @@ def get_applications_with_manufacturer(db: Session = Depends(get_db), current_us
     ]
     return result
 
+@router.get("/stats", response_model=ApplicationStats)
+def get_application_stats(db: Session = Depends(get_db)):
+    total_count = db.query(Application).count()
+    active_count = db.query(Application).filter(Application.is_active == True).count()
+    return ApplicationStats(total=total_count, active=active_count)
+
 @router.get("/{application_id}", response_model=ApplicationOut)
 def get_application(application_id: int, db: Session = Depends(get_db)):
     app = db.query(Application).filter_by(id=application_id).first()
@@ -185,3 +191,5 @@ def get_applications_by_manufacturer(manufacturer_id: int, db: Session = Depends
         )
     applications = db.query(Application).filter_by(manufacturer_id=manufacturer_id).all()
     return applications
+
+

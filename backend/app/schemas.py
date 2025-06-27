@@ -164,6 +164,10 @@ class ApplicationWithManufacturerOut(BaseModel):
     class Config:
         orm_mode = True
 
+class ApplicationStats(BaseModel):
+    total: int
+    active: int
+
 
 # LanguageModel
 class LanguageModelBase(BaseModel):
