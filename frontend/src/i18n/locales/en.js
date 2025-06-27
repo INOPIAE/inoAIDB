@@ -90,4 +90,10 @@ export default {
   loading: "Loading application statistics...",
   loadingerror: "Error loading data: {error}",
   appstats: "The database currently contains <strong>{count}</strong> application records.",
+  resetPasswordTitle: 'Reset Password',
+  passwordRequired: 'Password is required',
+  reset: 'Reset',
+  forgotPassword: "Reset Password",
+  emailRequiredForReset: "Please enter your email address to reset your password.",
+  resetLinkSent: "If the email exists, a reset link has been sent.",
 }

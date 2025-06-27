@@ -39,7 +39,6 @@ def test_get_modelchoice(client,authenticated_client_for_email):
 def test_get_modelchoices_id(client, authenticated_client_for_email):
     response = client.get(f"api/modelchoices/1")
     data = response.json()
-    print(data)
     assert data["name"] == "unknown"
 
     authenticated_client = authenticated_client_for_email("admin@example.com")

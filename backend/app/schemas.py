@@ -106,6 +106,13 @@ class RegisterResponse(BaseModel):
     user: UserResponse
     totp_uri: str
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class PasswordResetRequest(BaseModel):
+    token: str
+    new_password: str = Field(..., min_length=16, format="password")
+
 #Manufacturer
 class ManufacturerBase(BaseModel):
     name: str
