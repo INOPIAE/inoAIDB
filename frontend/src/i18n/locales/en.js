@@ -87,7 +87,7 @@ export default {
   acceptTos: "I accept the {tos}.",
   tosLinkText: "Terms of Service",
   pleaseAcceptTos: "Please accept the Terms of Service",
-  loading: "Loading application statistics...",
+  loading: "Loading data ...",
   loadingerror: "Error loading data: {error}",
   appstats: "The database currently contains <strong>{count}</strong> application records.",
   resetPasswordTitle: 'Reset Password',
@@ -96,4 +96,5 @@ export default {
   forgotPassword: "Reset Password",
   emailRequiredForReset: "Please enter your email address to reset your password.",
   resetLinkSent: "If the email exists, a reset link has been sent.",
+  searchApplications: "Search application",
 }

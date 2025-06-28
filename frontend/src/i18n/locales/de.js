@@ -87,7 +87,7 @@ export default {
   acceptTos: "Ich stimme den {tos} zu.",
   tosLinkText: "Nutzungsbedingungen (TOS)",
   pleaseAcceptTos: "Bitte akzeptieren Sie die Nutzungsbedingungen.",
-  loading: "Lade Anwendungsstatistik...",
+  loading: "Lade Daten ...",
   loadingError: "Fehler beim Laden: {error}",
   appstats: "Die Datenbank enthält aktuell <strong>{count}</strong> Datensätze zu Anwendungen.",
   resetPasswordTitle: 'Passwort zurücksetzen',
@@ -96,4 +96,5 @@ export default {
   forgotPassword: "Passwort zurücksetzen",
   emailRequiredForReset: "Bitte geben Sie Ihre E-Mail-Adresse für den Passwort-Reset ein.",
   resetLinkSent: "Wenn die E-Mail existiert, wurde ein Link zum Zurücksetzen gesendet.",
+  searchApplications: "Anwendungen suchen",
 }

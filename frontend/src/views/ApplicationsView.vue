@@ -1,9 +1,10 @@
 <template>
   <v-container>
     <v-row class="justify-space-between align-center mb-4">
-      <v-col cols="12" md="6">
+      <v-col cols="12" md="4">
         <h2>{{ $t('applications') }}</h2>
       </v-col>
+
       <v-col cols="12" md="4">
         <v-select
           v-model="selectedManufacturer"
@@ -14,20 +15,34 @@
           clearable
         />
       </v-col>
+
+      <v-col cols="12" md="4">
+        <v-text-field
+          v-model="searchText"
+          :label="$t('searchApplications')"
+          clearable
+          dense
+        />
+      </v-col>
+
       <v-col cols="auto" v-if="authStore.isAuthenticated">
         <v-btn color="primary" @click="openDialog()">{{ $t('new') }}</v-btn>
       </v-col>
     </v-row>
 
+    <p v-if="loading">{{ t('loading') }}</p>
+    <p v-else-if="error" class="text-red-600">{{ t('loadingError', { error }) }}</p>
+
     <v-data-table
+      v-if="!loading && !error"
       :headers="visibleHeaders"
       :items="filteredApplications"
       item-value="id"
       class="elevation-1"
     >
-    <template v-slot:item.modelchoice_name="{ item }">
-        {{$t( "mc_" + item.modelchoice_name )}}
-    </template>
+      <template v-slot:item.modelchoice_name="{ item }">
+        {{ $t("mc_" + item.modelchoice_name) }}
+      </template>
       <template v-slot:item.is_active="{ item }" v-if="authStore.isAuthenticated">
         <span>{{ item.is_active ? $t('yes') : $t('no') }}</span>
       </template>
@@ -90,10 +105,15 @@ const authStore = useAuthStore()
 
 const applications = ref([])
 const manufacturers = ref([])
-const dialog = ref(false)
-const selectedManufacturer = ref(null)
 const languageModels = ref([])
 const modelChoices = ref([])
+
+const dialog = ref(false)
+const selectedManufacturer = ref(null)
+const searchText = ref('')
+
+const loading = ref(false)
+const error = ref(null)
 
 const headers = computed(() => [
   { title: t('name'), key: 'name' },
@@ -106,7 +126,6 @@ const headers = computed(() => [
 ])
 
 const visibleHeaders = computed(() => {
-
   let base = [
     { title: t('name'), key: 'name' },
     { title: t('description'), key: 'description' },
@@ -139,6 +158,11 @@ const filteredApplications = computed(() => {
     apps = apps.filter(app => app.manufacturer_id === selectedManufacturer.value)
   }
 
+  if (searchText.value && searchText.value.trim().length > 0) {
+    const search = searchText.value.trim().toLowerCase()
+    apps = apps.filter(app => app.name.toLowerCase().includes(search))
+  }
+
   return apps
 })
 
@@ -153,10 +177,13 @@ const form = ref({
 })
 
 const loadApplications = async () => {
-    try {
-    const url = authStore.isAuthenticated && authStore.user?.is_admin
-      ? '/api/applications/with-manufacturer-admin'
-      : '/api/applications/with-manufacturer'
+  loading.value = true
+  error.value = null
+  try {
+    const url =
+      authStore.isAuthenticated && authStore.user?.is_admin
+        ? '/api/applications/with-manufacturer-admin'
+        : '/api/applications/with-manufacturer'
 
     const config = authStore.isAuthenticated ? { headers: authStore.authHeader } : {}
 
@@ -164,27 +191,43 @@ const loadApplications = async () => {
     applications.value = res.data
   } catch (e) {
     console.error('Error loading applications:', e)
+    error.value = e.message || 'Unknown error'
+  } finally {
+    loading.value = false
   }
 }
 
 const loadManufacturers = async () => {
-  const res = await axios.get('/api/manufacturers')
-  manufacturers.value = res.data
+  try {
+    const res = await axios.get('/api/manufacturers')
+    manufacturers.value = res.data
+  } catch (e) {
+    console.error('Error loading manufacturers:', e)
+  }
 }
 
 const loadLanguageModels = async () => {
-  const res = await axios.get('/api/languagemodels/')
-  languageModels.value = res.data
+  try {
+    const res = await axios.get('/api/languagemodels/')
+    languageModels.value = res.data
+  } catch (e) {
+    console.error('Error loading language models:', e)
+  }
 }
 
 const loadModelChoices = async () => {
-  const res = await axios.get('/api/modelchoices/')
-  modelChoices.value = res.data
+  try {
+    const res = await axios.get('/api/modelchoices/')
+    modelChoices.value = res.data
+  } catch (e) {
+    console.error('Error loading model choices:', e)
+  }
 }
 
 function translateModelChoice(item) {
   return t(`mc_${item.name}`) || item.name
 }
+
 const openDialog = (item = null) => {
   if (item) {
     form.value = { ...item }
@@ -211,7 +254,6 @@ const submit = async () => {
     const config = { headers: authStore.authHeader }
     form.value.languagemodel_id = Number(form.value.languagemodel_id)
     form.value.modelchoice_id = Number(form.value.modelchoice_id)
-    console.log('Submit form:', form.value)
     if (form.value.id) {
       await axios.put(`/api/applications/${form.value.id}`, form.value, config)
     } else {
