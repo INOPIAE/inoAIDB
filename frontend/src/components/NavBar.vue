@@ -139,18 +139,18 @@ export default {
             {
                 title: 'about',
                 icon: `mdi-information-variant`,
-                href: '/about',
+                href: '/general/about',
                 condition:  null,
             },
                         {
                 title: 'imprint',
                 icon: `mdi-information-variant`,
-                href: '/imprint',
+                href: '/general/imprint',
                 condition:  null,
             },            {
                 title: 'dataprotection',
                 icon: `mdi-information-variant`,
-                href: '/dataprotection',
+                href: '/general/dataprotection',
                 condition:  null,
             },
         ]);

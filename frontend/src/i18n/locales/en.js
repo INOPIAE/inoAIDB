@@ -97,4 +97,8 @@ export default {
   emailRequiredForReset: "Please enter your email address to reset your password.",
   resetLinkSent: "If the email exists, a reset link has been sent.",
   searchApplications: "Search application",
+  aboutTitle: "About this application",
+  fileNotFound: "File not found",
+  dataprotectionTitle: "Dataprotection",
+  imprintTitle: "Imprint",
 }

@@ -97,4 +97,8 @@ export default {
   emailRequiredForReset: "Bitte geben Sie Ihre E-Mail-Adresse für den Passwort-Reset ein.",
   resetLinkSent: "Wenn die E-Mail existiert, wurde ein Link zum Zurücksetzen gesendet.",
   searchApplications: "Anwendungen suchen",
+  aboutTitle: "Über diese Anwendung",
+  fileNotFound: "Datei nicht gefunden",
+  dataprotectionTitle: "Datenschutz",
+  imprintTitle: "Impressum",
 }
