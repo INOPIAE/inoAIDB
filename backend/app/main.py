@@ -2,10 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.api.endpoints import auth, manufacturers, users, applications, language_model, model_choice
+from app.api.endpoints import auth, manufacturers, users, applications, language_model, model_choice, utils
 from app.database import init_db, SessionLocal
 from app.init_data import ensure_default_invite_exists
-import asyncio
+#from api.endpoints.utils import router as page_exists_router
 
 settings = get_settings()
 
@@ -40,13 +40,13 @@ app.add_middleware(
 print(f"🔧 Loaded environment: {settings.env}")
 print(f"📦 DB: {settings.database_url}")
 
-# API-Routen
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
 app.include_router(manufacturers.router, prefix="/api/manufacturers", tags=["manufacturer"])
 app.include_router(applications.router, prefix="/api/applications", tags=["application"])
 app.include_router(language_model.router, prefix="/api/languagemodels", tags=["languagemodel"])
 app.include_router(model_choice.router, prefix="/api/modelchoices", tags=["modelchoice"])
+app.include_router(utils.router, prefix="/api/utils", tags=["utils"])
 
 # Startup-Event
 @app.on_event("startup")

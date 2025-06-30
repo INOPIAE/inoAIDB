@@ -35,7 +35,6 @@
 <script setup>
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { vuetify } from '@/plugins/vuetify'
 
 const { locale } = useI18n()
 
@@ -49,7 +48,6 @@ const currentFlag = ref(languages[locale.value]?.flag || 'gb')
 function changeLanguage(lang) {
   locale.value = lang
   localStorage.setItem('lang', lang)
-  vuetify.framework.locale.current = lang
   currentFlag.value = languages[lang].flag
 }
 </script>

@@ -20,6 +20,8 @@
     Create private key (e.g. via openssl or xca) and place the base64-encoded DER as secret without line breaks.
 1. Start `start_app.py` within folder where it is located with `python3 ./start_app`. This ensures that the path `./frontend/dist/` is valid.
 
+1. Create language html files for imprint and dataprotection with the pattern name_lg.html (lg - language) from [`template_XX.html.template]`(/frontend/public/hdocs/template_XX.html.template)
+
 TBD    If the configuaration file `config.ini` is not stored next to `myapp.py` start with `python3 .\myapp.py --config PathTo\myapp.ini`
 1. If application startup is successful the database will be populated with an empty schema and the web interface will become available after a few seconds at `http://localhost:8000`.
 1. In a production environment the web application should be used behind a reverse proxy to hold static assets in its cache and improve system performance.

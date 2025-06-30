@@ -59,3 +59,7 @@ Thumbs.db
 
 /backend/tests/*.py1
 .marcus/
+/frontend/public/hdocs/imprint_en.html
+/frontend/public/hdocs/dataprotection_de.html
+/frontend/public/hdocs/dataprotection_en.html
+/frontend/public/hdocs/imprint_de.html

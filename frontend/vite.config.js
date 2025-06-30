@@ -4,7 +4,6 @@ import path from 'path'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd())
-
   return {
     plugins: [vue()],
     resolve: {
@@ -22,6 +21,10 @@ export default defineConfig(({ mode }) => {
           secure: false,
         },
       },
+    },
+    build: {
+      manifest: true,
+      outDir: 'dist',
     },
   }
 })
