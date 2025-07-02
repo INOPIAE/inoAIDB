@@ -27,7 +27,10 @@
       <v-col cols="12" md="4" v-if="authStore.isAuthenticated">
         <v-btn color="primary" @click="saveChanges">{{ $t('saveSelection') }}</v-btn>
       </v-col>
-      <v-col cols="12" md="8" class="text-right" v-if="authStore.isAuthenticated">
+      <v-col cols="12" md="4" v-if="authStore.isAuthenticated">
+        <v-btn color="primary" @click="downloadCSV">{{ $t('exportCSV') }}</v-btn>
+      </v-col>
+      <v-col cols="12" md="4" class="text-right" v-if="authStore.user?.is_admin">
         <v-btn color="secondary" @click="openDialog()">{{ $t('new') }}</v-btn>
       </v-col>
     </v-row>
@@ -234,6 +237,31 @@ const saveChanges = () => {
       console.error('Save error:', err)
       alert(t('errorSaveFailed'))
     })
+}
+
+const downloadCSV = async () => {
+  const config = {
+    headers: authStore.authHeader,
+    responseType: 'blob'
+  }
+
+  try {
+    const response = await axios.get('/api/applications/export/csv', config)
+
+    const blob = new Blob([response.data], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'applications.csv')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error(t('errorCSVFailed'), error)
+    alert(t('errorCSVFailed'))
+  }
 }
 
 const loadManufacturers = async () => {

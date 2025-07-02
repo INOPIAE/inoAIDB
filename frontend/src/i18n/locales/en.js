@@ -105,4 +105,6 @@ export default {
   saveSelection: "Save Selection",
   noChanges: "No changes found.",
   saveSuccess: "Changes saved.",
+  exportCSV: "CSV Export",
+  errorCSVFailed: "CSV excport failed",
 }

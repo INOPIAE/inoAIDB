@@ -1,3 +1,5 @@
+import io
+import csv
 from app.models import ApplicationUser
 
 def new_application(authenticated_client):
@@ -346,3 +348,45 @@ def test_selection_save_no_application(authenticated_client_for_email):
     )
     assert response.status_code == 404
     assert response.json()["detail"] == "Application with id 99999 not found"
+
+def test_export_applications_csv(authenticated_client_for_email):
+    authenticated_client = authenticated_client_for_email("admin@example.com")
+
+    payload = {
+        "application_id": 2,
+        "selected": False
+    }
+    response = authenticated_client.post("/api/applications/application_selection", json=payload)
+    assert response.status_code == 200
+
+    response = authenticated_client.get("/api/applications/export/csv")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    assert "attachment; filename=applications.csv" in response.headers["content-disposition"]
+
+    content = response.content.decode()
+    f = io.StringIO(content)
+    reader = csv.reader(f)
+    rows = list(reader)
+
+    assert rows[0] == ["Application", "Description", "Manufacturer", "LanguageModel", "ModelChoice", "Selected"]
+
+
+    app1_row = next(row for row in rows if "Office" in row)
+    assert app1_row[-1] in ("True", "true", "1", "True") 
+
+    app1_row = next(row for row in rows if "Visual Studio Code" in row)
+    assert app1_row[-1] in ("False", "false", "0")
+
+def test_export_applications_csv_no_user(authenticated_client_for_email, client):
+    authenticated_client = authenticated_client_for_email("inactive@example.com")
+
+
+    response = authenticated_client.get("/api/applications/export/csv")
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Not authorized to retrieve this data"
+
+    response = client.get("/api/applications/export/csv")
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"
