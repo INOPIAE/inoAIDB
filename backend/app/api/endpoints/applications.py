@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 from typing import List
 
 from app.database import SessionLocal
-from app.schemas import ApplicationOut, ApplicationWithManufacturerOut, CreateApplication, ApplicationStats
-from app.models import Application, Manufacturer, User, LanguageModel, ModelChoice
+from app.schemas import ApplicationOut, ApplicationWithManufacturerOut, CreateApplication, ApplicationStats, ApplicationUserUpdate
+from app.models import Application, Manufacturer, User, LanguageModel, ModelChoice, ApplicationUser
 from app.api.deps import get_current_user
 
 router = APIRouter()
@@ -86,17 +86,21 @@ def get_active_applications_with_manufacturer(db: Session = Depends(get_db)):
             "languagemodel_name": r.languagemodel_name,
             "modelchoice_id": r.modelchoice_id,
             "modelchoice_name": r.modelchoice_name,
+            "applicationuser_id": 0,
+            "applicationuser_selected": False,
         }
         for r in rows
     ]
     return result
 
-@router.get("/with-manufacturer-admin", response_model=List[ApplicationWithManufacturerOut])
+@router.get("/with-manufacturer-user", response_model=List[ApplicationWithManufacturerOut])
 def get_applications_with_manufacturer(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    if not current_user.is_admin:
+    if not current_user.is_active:
         raise HTTPException(status_code=403, detail="Not authorized to access this data")
 
-    rows = (
+    AU = aliased(ApplicationUser)
+
+    query = (
         db.query(
             Application.id,
             Application.name,
@@ -108,13 +112,22 @@ def get_applications_with_manufacturer(db: Session = Depends(get_db), current_us
             LanguageModel.name.label("languagemodel_name"),
             Application.modelchoice_id,
             ModelChoice.name.label("modelchoice_name"),
+            AU.id.label("applicationuser_id"),
+            AU.selected.label("applicationuser_selected"),
         )
         .join(Manufacturer, Application.manufacturer_id == Manufacturer.id)
         .join(LanguageModel, Application.languagemodel_id == LanguageModel.id)
         .join(ModelChoice, Application.modelchoice_id == ModelChoice.id)
-        .order_by(Application.name.asc())
-        .all()
+        .outerjoin(
+            AU,
+            (AU.application_id == Application.id) & (AU.user_id == current_user.id)
+        )
     )
+
+    if not current_user.is_admin:
+        query = query.filter(Application.is_active == True)
+
+    rows = query.order_by(Application.name.asc()).all()
 
     result = [
         {
@@ -128,9 +141,12 @@ def get_applications_with_manufacturer(db: Session = Depends(get_db), current_us
             "languagemodel_name": r.languagemodel_name,
             "modelchoice_id": r.modelchoice_id,
             "modelchoice_name": r.modelchoice_name,
+            "applicationuser_id": r.applicationuser_id if r.applicationuser_id else 0,
+            "applicationuser_selected": r.applicationuser_selected if r.applicationuser_selected else False,
         }
         for r in rows
     ]
+
     return result
 
 @router.get("/stats", response_model=ApplicationStats)
@@ -193,3 +209,37 @@ def get_applications_by_manufacturer(manufacturer_id: int, db: Session = Depends
     return applications
 
 
+@router.post("/application_selection", response_model=ApplicationUserUpdate)
+def save_user_applications(
+    app: ApplicationUserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    
+    if not current_user.is_active:
+        raise HTTPException(status_code=403, detail="Not authorized to change this data")
+
+    application = db.query(Application).filter_by(id=app.application_id).first()
+    if not application:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Application with id {app.application_id} not found"
+        )
+
+    entry = (
+        db.query(ApplicationUser)
+        .filter_by(user_id=current_user.id, application_id=app.application_id)
+        .first()
+    )
+    if entry:
+        entry.selected = app.selected
+    else:
+        new_entry = ApplicationUser(
+            user_id=current_user.id,
+            application_id=app.application_id,
+            selected=app.selected
+        )
+        db.add(new_entry)
+
+    db.commit()
+    return app

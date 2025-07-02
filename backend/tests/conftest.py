@@ -10,7 +10,7 @@ from app import auth, models
 from app.config import get_settings
 from app.database import Base, get_db
 from app.main import app
-from app.models import Application, AuthInvite, Manufacturer, User, LanguageModel, ModelChoice, PasswordResetToken
+from app.models import Application, AuthInvite, Manufacturer, User, LanguageModel, ModelChoice, PasswordResetToken, ApplicationUser
 
 
 @pytest.fixture(scope="session")
@@ -63,7 +63,9 @@ def client(db):
 def setup_test_data(db):
     db.query(AuthInvite).delete()
     db.query(PasswordResetToken).delete()
+    db.query(ApplicationUser).delete()
     db.query(User).delete()
+
 
     db.query(Application).delete()
     db.query(LanguageModel).delete()
@@ -77,10 +79,12 @@ def setup_test_data(db):
     db.execute(text("ALTER SEQUENCE model_choices_id_seq RESTART WITH 1"))
     db.execute(text("ALTER SEQUENCE applications_id_seq RESTART WITH 1"))
     db.execute(text("ALTER SEQUENCE password_reset_tokens_id_seq RESTART WITH 1"))
+    db.execute(text("ALTER SEQUENCE application_users_id_seq RESTART WITH 1"))
 
     user1 = User(username="admin", email="admin@example.com", hashed_password=auth.pwd_context.hash("passwordpassword"), is_admin=True, totp_secret=auth.generate_totp_secret())
     user2 = User(username="user", email="user@example.com", hashed_password=auth.pwd_context.hash("passwordpassword"), is_admin=False, totp_secret=auth.generate_totp_secret())
     user3 = User(username="missingotp", email="missingotp@example.com", hashed_password=auth.pwd_context.hash("passwordpassword"), is_admin=False)
+    user4 = User(username="inactive", email="inactive@example.com", hashed_password=auth.pwd_context.hash("passwordpassword"), is_active=False, is_admin=False, totp_secret=auth.generate_totp_secret())
 
     man1 = Manufacturer(name="Microsoft", description="Tech", is_active=True)
     man2 = Manufacturer(name="Apple", description="Tech", is_active=True)
@@ -99,7 +103,10 @@ def setup_test_data(db):
     inv2 = AuthInvite(code = "invite1", use_count = 1, use_max = 2)
     inv3 = AuthInvite(code = "invite2", use_count = 1, use_max = 1)
 
-    db.add_all([user1, user2, user3, man1, man2, lm1, lm2, mc1, mc2, app1, app2, app3, inv1, inv2, inv3])
+    au1 = ApplicationUser(user_id=1, application_id=1, selected=True)
+    au2 = ApplicationUser(user_id=2, application_id=2, selected=True)
+
+    db.add_all([user1, user2, user3, user4, man1, man2, lm1, lm2, mc1, mc2, app1, app2, app3, inv1, inv2, inv3, au1, au2])
     db.commit()
     yield
     db.close()

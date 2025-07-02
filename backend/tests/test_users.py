@@ -86,7 +86,7 @@ def test_get_user_admin(authenticated_client_for_email):
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
-    assert len(data) == 3
+    assert len(data) == 4
     assert any(m["email"] == "admin@example.com" for m in data)
     emails = [user["email"] for user in data]
     assert "testuser@example.com" not in emails
@@ -96,7 +96,7 @@ def test_get_user_admin(authenticated_client_for_email):
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
-    assert len(data) == 4
+    assert len(data) == 5
     assert any(m["email"] == "testuser@example.com" for m in data)
 
 def test_get_user_user(authenticated_client_for_email):

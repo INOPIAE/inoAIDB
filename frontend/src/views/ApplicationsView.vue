@@ -4,7 +4,6 @@
       <v-col cols="12" md="4">
         <h2>{{ $t('applications') }}</h2>
       </v-col>
-
       <v-col cols="12" md="4">
         <v-select
           v-model="selectedManufacturer"
@@ -15,7 +14,6 @@
           clearable
         />
       </v-col>
-
       <v-col cols="12" md="4">
         <v-text-field
           v-model="searchText"
@@ -24,9 +22,13 @@
           dense
         />
       </v-col>
-
-      <v-col cols="auto" v-if="authStore.isAuthenticated">
-        <v-btn color="primary" @click="openDialog()">{{ $t('new') }}</v-btn>
+    </v-row>
+    <v-row>
+      <v-col cols="12" md="4" v-if="authStore.isAuthenticated">
+        <v-btn color="primary" @click="saveChanges">{{ $t('saveSelection') }}</v-btn>
+      </v-col>
+      <v-col cols="12" md="8" class="text-right" v-if="authStore.isAuthenticated">
+        <v-btn color="secondary" @click="openDialog()">{{ $t('new') }}</v-btn>
       </v-col>
     </v-row>
 
@@ -43,9 +45,21 @@
       <template v-slot:item.modelchoice_name="{ item }">
         {{ $t("mc_" + item.modelchoice_name) }}
       </template>
+
+      <template #item.applicationuser_selected="{ item }">
+        <v-checkbox
+          v-model="item.applicationuser_selected"
+          :true-value="true"
+          :false-value="false"
+          hide-details
+          density="compact"
+        />
+      </template>
+
       <template v-slot:item.is_active="{ item }" v-if="authStore.isAuthenticated">
         <span>{{ item.is_active ? $t('yes') : $t('no') }}</span>
       </template>
+
       <template v-if="authStore.isAuthenticated" v-slot:item.actions="{ item }">
         <v-btn @click="openDialog(item)" size="small" color="primary">
           {{ $t('edit') }}
@@ -104,6 +118,7 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 
 const applications = ref([])
+const originalApplications = ref([])
 const manufacturers = ref([])
 const languageModels = ref([])
 const modelChoices = ref([])
@@ -121,6 +136,7 @@ const headers = computed(() => [
   { title: t('manufacturer'), key: 'manufacturer_name' },
   { title: t('languagemodel'), key: 'languagemodel_name' },
   { title: t('modelchoice'), key: 'modelchoice_name' },
+  { title: t('selectedApp'), key: 'applicationuser_selected'},
   { title: t('active'), key: 'is_active' },
   { title: t('actions'), key: 'actions', sortable: false },
 ])
@@ -133,8 +149,11 @@ const visibleHeaders = computed(() => {
     { title: t('languageModel'), key: 'languagemodel_name' },
     { title: t('modelChoice'), key: 'modelchoice_name' },
   ]
-
   if (authStore.isAuthenticated) {
+    base.push({ title: t('selectedApp'), key: 'applicationuser_selected'})
+  }
+
+  if (authStore.isAuthenticated && authStore.user?.is_admin) {
     base.push({ title: t('active'), key: 'is_active' })
     base.push({ title: t('actions'), key: 'actions', sortable: false })
   }
@@ -180,21 +199,41 @@ const loadApplications = async () => {
   loading.value = true
   error.value = null
   try {
-    const url =
-      authStore.isAuthenticated && authStore.user?.is_admin
-        ? '/api/applications/with-manufacturer-admin'
-        : '/api/applications/with-manufacturer'
-
+    const url = authStore.isAuthenticated ? '/api/applications/with-manufacturer-user' : '/api/applications/with-manufacturer'
     const config = authStore.isAuthenticated ? { headers: authStore.authHeader } : {}
-
     const res = await axios.get(url, config)
-    applications.value = res.data
+    applications.value = res.data.map(app => ({ ...app }))
+    originalApplications.value = res.data.map(app => ({ ...app }))
   } catch (e) {
     console.error('Error loading applications:', e)
     error.value = e.message || 'Unknown error'
   } finally {
     loading.value = false
   }
+}
+
+const saveChanges = () => {
+  const changed = applications.value.filter((app, idx) =>
+    app.applicationuser_selected !== originalApplications.value[idx]?.applicationuser_selected
+  )
+  if (changed.length === 0) {
+    alert(t('noChanges'))
+    return
+  }
+  const config = { headers: authStore.authHeader }
+  Promise.all(
+    changed.map(app =>
+      axios.post('/api/applications/application_selection', { application_id: app.id, selected: app.applicationuser_selected }, config)
+    )
+  )
+    .then(() => {
+      alert(t('saveSuccess'))
+      originalApplications.value = applications.value.map(app => ({ ...app }))
+    })
+    .catch(err => {
+      console.error('Save error:', err)
+      alert(t('errorSaveFailed'))
+    })
 }
 
 const loadManufacturers = async () => {

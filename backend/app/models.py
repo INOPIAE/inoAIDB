@@ -100,3 +100,13 @@ class PasswordResetToken(Base):
     used = Column(Boolean, default=False)
 
     user = relationship("User")
+
+class ApplicationUser(Base):
+    __tablename__ = "application_users"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    application_id = Column(Integer, ForeignKey("applications.id"), nullable=False)
+    selected = Column(Boolean, default=False)
+
+    applications = relationship("Application")
+    user = relationship("User")

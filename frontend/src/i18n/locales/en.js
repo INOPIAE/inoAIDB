@@ -101,4 +101,8 @@ export default {
   fileNotFound: "File not found",
   dataprotectionTitle: "Dataprotection",
   imprintTitle: "Imprint",
+  selectedApp: "Selected Application",
+  saveSelection: "Save Selection",
+  noChanges: "No changes found.",
+  saveSuccess: "Changes saved.",
 }
