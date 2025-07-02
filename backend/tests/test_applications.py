@@ -1,3 +1,5 @@
+from app.models import ApplicationUser
+
 def new_application(authenticated_client):
     response = authenticated_client.post("api/applications/", json={
         "name": "Test Application",
@@ -213,31 +215,134 @@ def test_get_active_applications_with_manufacturer(client):
         assert "languagemodel_name" in app
         assert "modelchoice_name" in app
 
-def test_get_applications_with_manufacturer(authenticated_client_for_email):
+def test_get_applications_with_manufacturer_admin(authenticated_client_for_email):
     authenticated_client = authenticated_client_for_email("admin@example.com")
-    response = authenticated_client.get("/api/applications/with-manufacturer-admin")
+    response = authenticated_client.get("/api/applications/with-manufacturer-user")
     assert response.status_code == 200
 
     data = response.json()
     assert isinstance(data, list)
     assert len(data) == 3
 
+def test_get_applications_with_manufacturer_user(authenticated_client_for_email):
+    authenticated_client = authenticated_client_for_email("user@example.com")
+    response = authenticated_client.get("/api/applications/with-manufacturer-user")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) == 2
+
+
 def test_get_applications_with_manufacturer_no_login(client):
-    response = client.get("/api/applications/with-manufacturer-admin")
+    response = client.get("/api/applications/with-manufacturer-user")
     assert response.status_code == 401
     assert response.json()["detail"] == "Not authenticated"
 
-def test_get_applications_with_manufacturer_no_login(authenticated_client_for_email):
-    authenticated_client = authenticated_client_for_email("user@example.com")
-    response = authenticated_client.get("/api/applications/with-manufacturer-admin")
+def test_get_applications_with_manufacturer_inactive_user(authenticated_client_for_email):
+    authenticated_client = authenticated_client_for_email("inactive@example.com")
+    response = authenticated_client.get("/api/applications/with-manufacturer-user")
     assert response.status_code == 403
     assert response.json()["detail"] == "Not authorized to access this data"
 
 def test_get_application_stats(client):
     response = client.get("/api/applications/stats")
-    print("Response:", response.status_code, response.text) 
     assert response.status_code == 200
 
     data = response.json()
     assert data["total"] == 3
     assert data["active"] == 2
+
+def test_selection_save(authenticated_client_for_email, db):
+    userid = 1
+    authenticated_client = authenticated_client_for_email("admin@example.com")
+    au = db.query(ApplicationUser).filter(ApplicationUser.user_id == userid).all()
+    assert au is not None
+    assert len(au) == 1
+    payload = {
+        "application_id": 1,
+        "selected": False
+    }
+    response = authenticated_client.post("/api/applications/application_selection", json=payload)
+    assert response.status_code == 200
+
+    payload = {
+        "application_id": 2,
+        "selected": True
+    }
+    response = authenticated_client.post("/api/applications/application_selection", json=payload)
+    assert response.status_code == 200
+
+
+    db.expire_all() 
+    entry1 = db.query(ApplicationUser).filter_by(user_id=userid, application_id=1).first()
+    entry2 = db.query(ApplicationUser).filter_by(user_id=userid, application_id=2).first()
+
+    assert not entry1.selected
+    assert entry2 is not None
+    assert entry2.selected is True
+
+    au = db.query(ApplicationUser).filter(ApplicationUser.user_id == userid).all()
+    assert au is not None
+    assert len(au) == 2
+
+    userid = 2
+    authenticated_client = authenticated_client_for_email("user@example.com")
+    au = db.query(ApplicationUser).filter(ApplicationUser.user_id == userid).all()
+    assert au is not None
+    assert len(au) == 1
+    payload = {
+        "application_id": 2,
+        "selected": False
+    }
+    response = authenticated_client.post("/api/applications/application_selection", json=payload)
+    assert response.status_code == 200
+
+    payload = {
+        "application_id": 1,
+        "selected": True
+    }
+    response = authenticated_client.post("/api/applications/application_selection", json=payload)
+    assert response.status_code == 200
+
+
+    db.expire_all() 
+    entry1 = db.query(ApplicationUser).filter_by(user_id=userid, application_id=2).first()
+    entry2 = db.query(ApplicationUser).filter_by(user_id=userid, application_id=1).first()
+
+    assert not entry1.selected
+    assert entry2 is not None
+    assert entry2.selected is True
+
+    au = db.query(ApplicationUser).filter(ApplicationUser.user_id == userid).all()
+    assert au is not None
+    assert len(au) == 2
+
+def test_selection_save_no_user(authenticated_client_for_email, client):
+    authenticated_client = authenticated_client_for_email("inactive@example.com")
+    payload = {
+        "application_id": 1,
+        "selected": False
+    }
+
+    response = authenticated_client.post("/api/applications/application_selection", json=payload)
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Not authorized to change this data"
+
+    response = client.post("/api/applications/application_selection", json=payload)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"
+
+def test_selection_save_no_application(authenticated_client_for_email):
+    authenticated_client = authenticated_client_for_email("admin@example.com")
+    payload = {
+        "application_id": 99999,
+        "selected": True
+    }
+
+    response = authenticated_client.post(
+        "/api/applications/application_selection",
+        json=payload
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Application with id 99999 not found"

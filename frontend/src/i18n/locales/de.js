@@ -101,4 +101,8 @@ export default {
   fileNotFound: "Datei nicht gefunden",
   dataprotectionTitle: "Datenschutz",
   imprintTitle: "Impressum",
+  selectedApp: "Ausgewählte Anwendung",
+  saveSelection: "Auswahl speichern",
+  noChanges: "Keine Änderungen erkannt.",
+  saveSuccess: "Änderungen gespeichert.",
 }

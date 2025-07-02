@@ -167,6 +167,8 @@ class ApplicationWithManufacturerOut(BaseModel):
     languagemodel_name: str
     modelchoice_id: int
     modelchoice_name: str
+    applicationuser_id: int
+    applicationuser_selected: bool
 
     class Config:
         orm_mode = True
@@ -174,6 +176,13 @@ class ApplicationWithManufacturerOut(BaseModel):
 class ApplicationStats(BaseModel):
     total: int
     active: int
+
+class ApplicationUserBase(BaseModel):
+    application_id: int
+    selected: bool
+
+class ApplicationUserUpdate(ApplicationUserBase):
+    pass
 
 
 # LanguageModel
