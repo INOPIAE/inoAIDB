@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, aliased
 from typing import List
+from fastapi.responses import StreamingResponse
+import csv
+import io
 
 from app.database import SessionLocal
 from app.schemas import ApplicationOut, ApplicationWithManufacturerOut, CreateApplication, ApplicationStats, ApplicationUserUpdate
@@ -243,3 +246,45 @@ def save_user_applications(
 
     db.commit()
     return app
+
+@router.get("/export/csv")
+def export_applications_csv(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+
+    if not current_user.is_active:
+        raise HTTPException(status_code=403, detail="Not authorized to retrieve this data")
+
+    output = io.StringIO()
+    writer = csv.writer(output, quoting=csv.QUOTE_ALL)
+    writer.writerow(["Application", "Description", "Manufacturer", "LanguageModel", "ModelChoice", "Selected"])
+
+    AU = aliased(ApplicationUser)
+
+    data = (
+        db.query(
+            Application.name,
+            Application.description,
+            Manufacturer.name.label("manufacturer_name"),
+            LanguageModel.name.label("languagemodel_name"),
+            ModelChoice.name.label("modelchoice_name"),
+            AU.selected.label("applicationuser_selected"),
+        )
+        .join(Manufacturer, Application.manufacturer_id == Manufacturer.id)
+        .join(LanguageModel, Application.languagemodel_id == LanguageModel.id)
+        .join(ModelChoice, Application.modelchoice_id == ModelChoice.id)
+        .outerjoin(AU, (AU.application_id == Application.id) & (AU.user_id == current_user.id))
+        .filter(Application.is_active == True) 
+        .all()
+    )
+
+    for row in data:
+        writer.writerow(row)
+
+    output.seek(0)
+
+    # StreamingResponse erwartet bytes, also StringIO -> BytesIO mit Encoding umwandeln
+    response = StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=applications.csv"}
+    )
+    return response
