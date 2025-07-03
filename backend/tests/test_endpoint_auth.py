@@ -100,6 +100,20 @@ def test_create_invite(authenticated_client_for_email, db):
     assert db_invite.use_max == 5
     assert db_invite.use_count == 0
 
+def test_create_invite_no_admin(authenticated_client_for_email, client):
+    email = "user@example.com"
+    authenticated_client = authenticated_client_for_email(email)
+    
+    response = authenticated_client.post("/api/auth/invite", json={"use_max": 5})
+    
+    assert response.status_code == 403
+    data = response.json()
+    assert data["detail"] == "Not authorized to access this data"
+
+    response = client.post("/api/auth/invite", json={"use_max": 5})
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"
+
 
 def test_get_invites(authenticated_client_for_email, db):
     email = "admin@example.com"
@@ -118,6 +132,19 @@ def test_get_invites(authenticated_client_for_email, db):
     assert "invite-valid" in codes
     assert "invite-used-up" not in codes
 
+def test_get_invites_no_admin(authenticated_client_for_email, client):
+    email = "user@example.com"
+    authenticated_client = authenticated_client_for_email(email)
+
+    response = authenticated_client.get("/api/auth/invite")
+    assert response.status_code == 403
+    data = response.json()
+    assert data["detail"] == "Not authorized to access this data"
+
+    response = client.get("/api/auth/invite")
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"
+
 
 def test_get_invite_uses_left(authenticated_client_for_email, db):
     email = "admin@example.com"
@@ -129,6 +156,19 @@ def test_get_invite_uses_left(authenticated_client_for_email, db):
     assert response.status_code == 200
     data = response.json()
     assert data["use_left"] == 7
+
+def test_get_invite_uses_left_no_admin(authenticated_client_for_email, client):
+    email = "user@example.com"
+    authenticated_client = authenticated_client_for_email(email)
+
+    response = authenticated_client.get("/api/auth/invite/testcode123")
+    assert response.status_code == 403
+    data = response.json()
+    assert data["detail"] == "Not authorized to access this data"
+
+    response = client.get("/api/auth/invite/testcode123")
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"
 
 
 def test_get_invite_uses_left_invalid_code(authenticated_client_for_email):

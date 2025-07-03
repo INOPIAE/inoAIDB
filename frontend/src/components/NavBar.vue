@@ -81,13 +81,6 @@ export default {
                 level: 1,
             },
             {
-                title: 'invite',
-                icon: `mdi-account-plus`,
-                href: '/invite',
-                condition: () => authStore.isAuthenticated,
-                level: 1,
-            },
-            {
                 title: 'logout',
                 icon: `mdi-logout`,
                 href: "#", // Use href as placeholder (or null)
@@ -111,6 +104,13 @@ export default {
                 icon: `mdi-account`,
                 href: '/userprofile',
                 condition: () => authStore.isAuthenticated && authStore.user?.is_admin,
+            },
+                        {
+                title: 'invite',
+                icon: `mdi-account-plus`,
+                href: '/invite',
+                condition: () => authStore.isAuthenticated && authStore.user?.is_admin,
+                level: 1,
             },
             {
                 title: 'userAdministration',
