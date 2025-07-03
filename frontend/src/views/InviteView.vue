@@ -41,8 +41,10 @@
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
+const router = useRouter()
 const { t } = useI18n()
 const authStore = useAuthStore()
 
@@ -88,7 +90,15 @@ const checkInvite = async () => {
   }
 }
 
-onMounted(fetchInvites)
+onMounted(() => {
+  // Wenn nicht eingeloggt oder kein Admin, umleiten zum Login
+  if (!authStore.user || !authStore.user.is_admin) {
+    router.push('/login')
+  } else {
+    fetchInvites()
+  }
+})
+
 </script>
 
 <style scoped>

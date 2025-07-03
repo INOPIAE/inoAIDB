@@ -58,6 +58,9 @@ def verify_otp(otp_data: schemas.OTPVerify, db: Session = Depends(get_db)):
 
 @router.get("/invite", response_model=schemas.InviteListResponse)
 def get_invites(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized to access this data")
+
     invites = db.query(
         AuthInvite.code,
         (AuthInvite.use_max - AuthInvite.use_count).label("use_left")
@@ -74,6 +77,10 @@ def create_invite(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized to access this data")
+
     code = invite.code or str(uuid.uuid4())
 
     db_invite = AuthInvite(
@@ -96,6 +103,10 @@ def get_invite_uses_left(
     auth: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+
+    if not auth.is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized to access this data")
+
     db_invite = db.query(AuthInvite).filter(
         AuthInvite.code == code
     ).first()
