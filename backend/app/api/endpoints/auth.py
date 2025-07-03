@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC, timezone
 from fastapi.security import OAuth2PasswordRequestForm
 from app import schemas, models, auth
 from app.database import SessionLocal
@@ -124,7 +124,7 @@ def forgot_password(email: schemas.ForgotPasswordRequest, db: Session = Depends(
         return {"message": "If the email exists, a reset link has been sent."}
 
     token = secrets.token_urlsafe(32)
-    expires = datetime.utcnow() + timedelta(hours=1)
+    expires = datetime.now(UTC) + timedelta(hours=1)
 
     db_token = PasswordResetToken(user_id=user.id, token=token, expires_at=expires)
     db.add(db_token)
@@ -142,7 +142,15 @@ def reset_password(request: schemas.PasswordResetRequest, db: Session = Depends(
         .filter(PasswordResetToken.token == request.token, PasswordResetToken.used == False)
         .first()
     )
-    if not token_entry or token_entry.expires_at < datetime.utcnow() :
+
+    if not token_entry:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+    expires_at = token_entry.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+    if expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="Invalid or expired token")
 
     user = db.query(User).filter(User.id == token_entry.user_id).first()

@@ -1,5 +1,5 @@
-from datetime import datetime
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text, TIMESTAMP
+from datetime import datetime, UTC
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -39,7 +39,7 @@ class AuthInvite(Base):
     code = Column(String, unique=True, nullable=False)
     use_count = Column(Integer, default=0)
     use_max = Column(Integer, nullable=False, default=1)
-    created = Column(TIMESTAMP(timezone=True), server_default=func.now())
+    created = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class Manufacturer(Base):
@@ -48,8 +48,8 @@ class Manufacturer(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True, nullable=False)
     description = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
     is_active = Column(Boolean, default=True)
     applications = relationship("Application", back_populates="manufacturer", cascade="all, delete")
 
@@ -62,8 +62,8 @@ class Application(Base):
     manufacturer_id = Column(Integer, ForeignKey("manufacturers.id"))
     languagemodel_id = Column(Integer, ForeignKey("language_models.id"))
     modelchoice_id = Column(Integer, ForeignKey("model_choices.id"))
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
     is_active = Column(Boolean, default=True)
 
@@ -76,8 +76,8 @@ class LanguageModel(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
     is_active = Column(Boolean, default=True)
 
