@@ -32,7 +32,7 @@ def create_language_model(languagemodel: LanguageModelCreate, db: Session = Depe
     db_languagemodel = db.query(LanguageModel).filter(LanguageModel.name == languagemodel.name).first()
     if db_languagemodel:
         raise HTTPException(status_code=400, detail="Language model already exists")
-    lm = LanguageModel(**languagemodel.dict())
+    lm = LanguageModel(**languagemodel.model_dump())
     db.add(lm)
     db.commit()
     db.refresh(lm)
@@ -46,7 +46,7 @@ def update_language_model(language_model_id: int, data: LanguageModelUpdate, db:
     lm = db.query(LanguageModel).filter(LanguageModel.id == language_model_id).first()
     if not lm:
         raise HTTPException(status_code=404, detail="Language model not found")
-    for field, value in data.dict(exclude_unset=True).items():
+    for field, value in data.model_dump(exclude_unset=True).items():
         setattr(lm, field, value)
     db.commit()
     db.refresh(lm)

@@ -20,7 +20,7 @@ def create_model_choices(mc: ModelChoiceCreate, db: Session = Depends(get_db), c
     db_mc = db.query(ModelChoice).filter(ModelChoice.name == mc.name).first()
     if db_mc:
         raise HTTPException(status_code=400, detail="Model choice already exists")
-    new_mc = ModelChoice(**mc.dict())
+    new_mc = ModelChoice(**mc.model_dump())
     db.add(new_mc)
     db.commit()
     db.refresh(new_mc)
@@ -48,7 +48,7 @@ def update_model_choices(modelchoice_id: int, updates: ModelChoiceUpdate, db: Se
     if not mc:
         raise HTTPException(status_code=404, detail="Model choice not found")
 
-    for key, value in updates.dict().items():
+    for key, value in updates.model_dump().items():
         setattr(mc, key, value)
 
     db.commit()

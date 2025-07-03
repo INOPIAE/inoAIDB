@@ -21,7 +21,7 @@ def create_manufacturer(manufacturer: ManufacturerCreate, db: Session = Depends(
     db_manufacturer = db.query(Manufacturer).filter(Manufacturer.name == manufacturer.name).first()
     if db_manufacturer:
         raise HTTPException(status_code=400, detail="Manufacturer already exists")
-    new_manufacturer = Manufacturer(**manufacturer.dict())
+    new_manufacturer = Manufacturer(**manufacturer.model_dump())
     db.add(new_manufacturer)
     db.commit()
     db.refresh(new_manufacturer)
@@ -46,7 +46,7 @@ def update_manufacturer(manufacturer_id: int, updates: ManufacturerUpdate, db: S
     if not manufacturer:
         raise HTTPException(status_code=404, detail="Manufacturer not found")
 
-    for key, value in updates.dict().items():
+    for key, value in updates.model_dump().items():
         setattr(manufacturer, key, value)
 
     db.commit()

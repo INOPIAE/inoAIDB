@@ -43,7 +43,7 @@ def create_application(application: CreateApplication, db: Session = Depends(get
             detail="Model choice not found"
         )
 
-    db_application = Application(**application.dict())
+    db_application = Application(**application.model_dump())
     db.add(db_application)
     db.commit()
     db.refresh(db_application)
@@ -192,7 +192,7 @@ def update_application(
             detail="Model choice not found"
         )
 
-    for field, value in updated_data.dict().items():
+    for field, value in updated_data.model_dump().items():
         setattr(app, field, value)
 
     db.commit()
