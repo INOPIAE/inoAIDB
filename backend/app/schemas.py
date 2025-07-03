@@ -17,8 +17,8 @@ class OTPVerify(BaseModel):
     otp_code: str
 
 class ChangePasswordRequest(BaseModel):
-    old_password: str = Field(..., min_length=16, format="password")
-    new_password: str = Field(..., min_length=16, format="password")
+    old_password: str = Field(..., min_length=16, json_schema_extra={"format": "password"})
+    new_password: str = Field(..., min_length=16, json_schema_extra={"format": "password"})
     totp: str
 
 
@@ -73,8 +73,9 @@ class UserCreate(UserBase):
 class UserOut(UserBase):
     id: int
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True
+    }
 
 class UserUpdate(BaseModel):
     username: Optional[str] = None
@@ -91,7 +92,7 @@ class UserLogin(BaseModel):
 class RegisterRequest(BaseModel):
     username: str
     email: EmailStr
-    password: str = Field(..., min_length=16, format="password")
+    password: str = Field(..., min_length=16, json_schema_extra={"format": "password"})
     invite: str
     accept_terms: bool = Field(..., description="User must accept terms and conditions")
 
@@ -111,7 +112,7 @@ class ForgotPasswordRequest(BaseModel):
 
 class PasswordResetRequest(BaseModel):
     token: str
-    new_password: str = Field(..., min_length=16, format="password")
+    new_password: str = Field(..., min_length=16, json_schema_extra={"format": "password"})
 
 #Manufacturer
 class ManufacturerBase(BaseModel):
@@ -133,8 +134,10 @@ class ManufacturerOut(ManufacturerBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True
+    }
+
 
 #Application
 class ApplicationBase(BaseModel):
@@ -153,8 +156,9 @@ class ApplicationOut(ApplicationBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True
+    }
 
 class ApplicationWithManufacturerOut(BaseModel):
     id: int
@@ -170,8 +174,9 @@ class ApplicationWithManufacturerOut(BaseModel):
     applicationuser_id: int
     applicationuser_selected: bool
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True
+    }
 
 class ApplicationStats(BaseModel):
     total: int
@@ -202,8 +207,9 @@ class LanguageModelOut(LanguageModelBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True
+    }
 
 
 # Model Choice
@@ -219,5 +225,6 @@ class ModelChoiceUpdate(BaseModel):
 class ModelChoiceOut(ModelChoiceBase):
     id: int
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True
+    }

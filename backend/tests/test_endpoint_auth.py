@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 from app import models
 from app.models import PasswordResetToken, User
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 import secrets
 
 def test_login_success(client, valid_otp_for_email):
@@ -213,8 +213,7 @@ def test_forgot_password_wrong_email(mock_send_email, client, db):
     tokens = db.query(PasswordResetToken).all()
     assert len(tokens) == 0
 
-@patch("app.api.endpoints.auth.send_email")
-def test_reset_password_success(mock_send_email, client, db):
+def test_reset_password_success(client, db):
     email = "user@example.com"
 
     user = db.query(User).filter_by(email=email).first()
@@ -244,8 +243,7 @@ def test_reset_password_success(mock_send_email, client, db):
     assert token.used is True
 
 
-@patch("app.api.endpoints.auth.send_email")
-def test_reset_password_invalid(mock_send_email, client, db):
+def test_reset_password_invalid(client, db):
     email = "user@example.com"
     new_password = "MyNewSecurePassword123"
     response = client.post("/api/auth/reset-password", json={
@@ -280,3 +278,22 @@ def test_reset_password_invalid(mock_send_email, client, db):
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Invalid or expired token"
+
+
+def test_reset_password_token_expired(client, db):
+    new_password = "MyNewSecurePassword123"
+
+    token = secrets.token_urlsafe(32)
+    expires = datetime.now(UTC) + timedelta(hours=-3)
+
+    db_token = PasswordResetToken(user_id=2, token=token, expires_at=expires)
+    db.add(db_token)
+    db.commit()
+    response = client.post("/api/auth/reset-password", json={
+        "token": token,
+        "new_password": new_password
+    })
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid or expired token"
+

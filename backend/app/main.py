@@ -1,13 +1,26 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 
 from app.config import get_settings
 from app.api.endpoints import auth, manufacturers, users, applications, language_model, model_choice, utils
 from app.database import init_db, SessionLocal
 from app.init_data import ensure_default_invite_exists
-#from api.endpoints.utils import router as page_exists_router
 
 settings = get_settings()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+
+    if settings.env != "test":
+        db = SessionLocal()
+        try:
+            ensure_default_invite_exists(db)
+        finally:
+            db.close()
+
+    yield
 
 app = FastAPI(
     title="inoAIDB API",
@@ -20,15 +33,14 @@ app = FastAPI(
         "url": settings.contact_url,
     },
     docs_url="/docs",
+    lifespan=lifespan,
 )
-
 
 origins = [
     "http://localhost:5173",
     f"http://{settings.public_ip}:{settings.port_frontend}",
 ]
 
-# CORS localhost:5173 = Vite)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -47,15 +59,3 @@ app.include_router(applications.router, prefix="/api/applications", tags=["appli
 app.include_router(language_model.router, prefix="/api/languagemodels", tags=["languagemodel"])
 app.include_router(model_choice.router, prefix="/api/modelchoices", tags=["modelchoice"])
 app.include_router(utils.router, prefix="/api/utils", tags=["utils"])
-
-# Startup-Event
-@app.on_event("startup")
-async def startup():
-    init_db()
-
-    if settings.env != "test":
-        db = SessionLocal()
-        try:
-            ensure_default_invite_exists(db)
-        finally:
-            db.close()
