@@ -59,6 +59,18 @@
         />
       </template>
 
+      <template v-slot:item.risk_id="{ item }">
+        <v-select
+          v-model="item.risk_id"
+          :items="risks"
+          :item-title="translateRisk"
+          item-value="id"
+          dense
+          hide-details
+          style="max-width: 150px"
+        />
+      </template>
+
       <template v-slot:item.is_active="{ item }" v-if="authStore.isAuthenticated">
         <span>{{ item.is_active ? $t('yes') : $t('no') }}</span>
       </template>
@@ -125,6 +137,7 @@ const originalApplications = ref([])
 const manufacturers = ref([])
 const languageModels = ref([])
 const modelChoices = ref([])
+const risks = ref([])
 
 const dialog = ref(false)
 const selectedManufacturer = ref(null)
@@ -132,17 +145,6 @@ const searchText = ref('')
 
 const loading = ref(false)
 const error = ref(null)
-
-const headers = computed(() => [
-  { title: t('name'), key: 'name' },
-  { title: t('description'), key: 'description' },
-  { title: t('manufacturer'), key: 'manufacturer_name' },
-  { title: t('languagemodel'), key: 'languagemodel_name' },
-  { title: t('modelchoice'), key: 'modelchoice_name' },
-  { title: t('selectedApp'), key: 'applicationuser_selected'},
-  { title: t('active'), key: 'is_active' },
-  { title: t('actions'), key: 'actions', sortable: false },
-])
 
 const visibleHeaders = computed(() => {
   let base = [
@@ -154,6 +156,7 @@ const visibleHeaders = computed(() => {
   ]
   if (authStore.isAuthenticated) {
     base.push({ title: t('selectedApp'), key: 'applicationuser_selected'})
+    base.push({ title: t('risk'), key: 'risk_id'})
   }
 
   if (authStore.isAuthenticated && authStore.user?.is_admin) {
@@ -216,9 +219,14 @@ const loadApplications = async () => {
 }
 
 const saveChanges = () => {
-  const changed = applications.value.filter((app, idx) =>
-    app.applicationuser_selected !== originalApplications.value[idx]?.applicationuser_selected
-  )
+  const changed = applications.value.filter((app, idx) => {
+    const original = originalApplications.value[idx]
+    return (
+      app.applicationuser_selected !== original?.applicationuser_selected ||
+      app.risk_id !== original?.risk_id
+    )
+  })
+
   if (changed.length === 0) {
     alert(t('noChanges'))
     return
@@ -226,7 +234,7 @@ const saveChanges = () => {
   const config = { headers: authStore.authHeader }
   Promise.all(
     changed.map(app =>
-      axios.post('/api/applications/application_selection', { application_id: app.id, selected: app.applicationuser_selected }, config)
+      axios.post('/api/applications/application_selection', { application_id: app.id, selected: app.applicationuser_selected, risk_id: app.risk_id }, config)
     )
   )
     .then(() => {
@@ -295,6 +303,9 @@ function translateModelChoice(item) {
   return t(`mc_${item.name}`) || item.name
 }
 
+function translateRisk(item) {
+  return t(`r_${item.name}`) || item.name
+}
 const openDialog = (item = null) => {
   if (item) {
     form.value = { ...item }
@@ -314,6 +325,17 @@ const openDialog = (item = null) => {
 
 const closeDialog = () => {
   dialog.value = false
+}
+
+const loadRisks = async () => {
+  if (!authStore.isAuthenticated) return // nur für angemeldete Nutzer
+
+  try {
+    const res = await axios.get('/api/applications/risk')
+    risks.value = res.data
+  } catch (e) {
+    console.error('Error loading risks:', e)
+  }
 }
 
 const submit = async () => {
@@ -338,5 +360,6 @@ onMounted(() => {
   loadManufacturers()
   loadLanguageModels()
   loadModelChoices()
+  loadRisks()
 })
 </script>

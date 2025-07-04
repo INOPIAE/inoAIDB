@@ -263,14 +263,16 @@ def test_selection_save(authenticated_client_for_email, db):
     assert len(au) == 1
     payload = {
         "application_id": 1,
-        "selected": False
+        "selected": False,
+        "risk_id": 2
     }
     response = authenticated_client.post("/api/applications/application_selection", json=payload)
     assert response.status_code == 200
 
     payload = {
         "application_id": 2,
-        "selected": True
+        "selected": True,
+        "risk_id": 1
     }
     response = authenticated_client.post("/api/applications/application_selection", json=payload)
     assert response.status_code == 200
@@ -281,8 +283,10 @@ def test_selection_save(authenticated_client_for_email, db):
     entry2 = db.query(ApplicationUser).filter_by(user_id=userid, application_id=2).first()
 
     assert not entry1.selected
+    assert entry1.risk_id == 2
     assert entry2 is not None
     assert entry2.selected is True
+    assert entry2.risk_id == 1
 
     au = db.query(ApplicationUser).filter(ApplicationUser.user_id == userid).all()
     assert au is not None
@@ -295,14 +299,16 @@ def test_selection_save(authenticated_client_for_email, db):
     assert len(au) == 1
     payload = {
         "application_id": 2,
-        "selected": False
+        "selected": False,
+        "risk_id": 2
     }
     response = authenticated_client.post("/api/applications/application_selection", json=payload)
     assert response.status_code == 200
 
     payload = {
         "application_id": 1,
-        "selected": True
+        "selected": True,
+        "risk_id": 1
     }
     response = authenticated_client.post("/api/applications/application_selection", json=payload)
     assert response.status_code == 200
@@ -313,8 +319,10 @@ def test_selection_save(authenticated_client_for_email, db):
     entry2 = db.query(ApplicationUser).filter_by(user_id=userid, application_id=1).first()
 
     assert not entry1.selected
+    assert entry1.risk_id == 2
     assert entry2 is not None
     assert entry2.selected is True
+    assert entry2.risk_id == 1
 
     au = db.query(ApplicationUser).filter(ApplicationUser.user_id == userid).all()
     assert au is not None
@@ -324,7 +332,8 @@ def test_selection_save_no_user(authenticated_client_for_email, client):
     authenticated_client = authenticated_client_for_email("inactive@example.com")
     payload = {
         "application_id": 1,
-        "selected": False
+        "selected": False,
+        "risk_id": 1
     }
 
     response = authenticated_client.post("/api/applications/application_selection", json=payload)
@@ -339,7 +348,8 @@ def test_selection_save_no_application(authenticated_client_for_email):
     authenticated_client = authenticated_client_for_email("admin@example.com")
     payload = {
         "application_id": 99999,
-        "selected": True
+        "selected": True,
+        "risk_id": 1
     }
 
     response = authenticated_client.post(
@@ -349,12 +359,28 @@ def test_selection_save_no_application(authenticated_client_for_email):
     assert response.status_code == 404
     assert response.json()["detail"] == "Application with id 99999 not found"
 
+def test_selection_save_no_risk(authenticated_client_for_email):
+    authenticated_client = authenticated_client_for_email("admin@example.com")
+    payload = {
+        "application_id": 2,
+        "selected": True,
+        "risk_id": 99999
+    }
+
+    response = authenticated_client.post(
+        "/api/applications/application_selection",
+        json=payload
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Risk not found"
+
 def test_export_applications_csv(authenticated_client_for_email):
     authenticated_client = authenticated_client_for_email("admin@example.com")
 
     payload = {
         "application_id": 2,
-        "selected": False
+        "selected": False,
+        "risk_id": 1
     }
     response = authenticated_client.post("/api/applications/application_selection", json=payload)
     assert response.status_code == 200
@@ -370,14 +396,16 @@ def test_export_applications_csv(authenticated_client_for_email):
     reader = csv.reader(f)
     rows = list(reader)
 
-    assert rows[0] == ["Application", "Description", "Manufacturer", "LanguageModel", "ModelChoice", "Selected"]
+    assert rows[0] == ["Application", "Description", "Manufacturer", "LanguageModel", "ModelChoice", "Selected", "Risk"]
 
 
     app1_row = next(row for row in rows if "Office" in row)
-    assert app1_row[-1] in ("True", "true", "1", "True") 
+    assert app1_row[-2] in ("True", "true", "1", "True") 
+    assert app1_row[-1] == "unknown"
 
     app1_row = next(row for row in rows if "Visual Studio Code" in row)
-    assert app1_row[-1] in ("False", "false", "0")
+    assert app1_row[-2] in ("False", "false", "0")
+    assert app1_row[-1] == "unknown"
 
 def test_export_applications_csv_no_user(authenticated_client_for_email, client):
     authenticated_client = authenticated_client_for_email("inactive@example.com")
@@ -388,5 +416,21 @@ def test_export_applications_csv_no_user(authenticated_client_for_email, client)
     assert response.json()["detail"] == "Not authorized to retrieve this data"
 
     response = client.get("/api/applications/export/csv")
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"
+
+def test_get_risk(authenticated_client_for_email):
+    authenticated_client = authenticated_client_for_email("admin@example.com")
+
+    response = authenticated_client.get("/api/applications/risk")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    risks = response.json()
+    assert isinstance(risks, list)
+    assert {"id": 1, "name": "unknown"} in risks
+
+def test_get_risk_no_user(client):
+    response = client.get("/api/applications/risk")
     assert response.status_code == 401
     assert response.json()["detail"] == "Not authenticated"

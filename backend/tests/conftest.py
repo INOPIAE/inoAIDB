@@ -10,7 +10,7 @@ from app import auth, models
 from app.config import get_settings
 from app.database import Base, get_db
 from app.main import app
-from app.models import Application, AuthInvite, Manufacturer, User, LanguageModel, ModelChoice, PasswordResetToken, ApplicationUser
+from app.models import Application, AuthInvite, Manufacturer, User, LanguageModel, ModelChoice, PasswordResetToken, ApplicationUser, Risk
 
 
 @pytest.fixture(scope="session")
@@ -36,7 +36,6 @@ def alembic_config():
 
 @pytest.fixture(scope="session", autouse=True)
 def run_migrations(alembic_config):
-    # Nur einmal pro Testsuite auf HEAD bringen
     command.upgrade(alembic_config, "head")
 
 @pytest.fixture(scope="function")
@@ -103,8 +102,23 @@ def setup_test_data(db):
     inv2 = AuthInvite(code = "invite1", use_count = 1, use_max = 2)
     inv3 = AuthInvite(code = "invite2", use_count = 1, use_max = 1)
 
-    au1 = ApplicationUser(user_id=1, application_id=1, selected=True)
-    au2 = ApplicationUser(user_id=2, application_id=2, selected=True)
+    risks_to_create = [
+        {"id": 1, "name": "unknown", "sort": 1},
+        {"id": 2, "name": "minimal", "sort": 2},
+    ]
+
+    for data in risks_to_create:
+        existing_risk = db.query(Risk).filter(Risk.id == data["id"]).first()
+        if not existing_risk:
+            risk = Risk(**data)
+            db.add(risk)
+            db.commit()
+            print(f"Risk with id={data['id']} created.")
+
+
+    au1 = ApplicationUser(user_id=1, application_id=1, selected=True, risk_id=1)
+    au2 = ApplicationUser(user_id=2, application_id=2, selected=True, risk_id=1)
+
 
     db.add_all([user1, user2, user3, user4, man1, man2, lm1, lm2, mc1, mc2, app1, app2, app3, inv1, inv2, inv3, au1, au2])
     db.commit()

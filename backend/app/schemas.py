@@ -173,6 +173,8 @@ class ApplicationWithManufacturerOut(BaseModel):
     modelchoice_name: str
     applicationuser_id: int
     applicationuser_selected: bool
+    risk_id: Optional[int] = None
+    risk_name: Optional[str] = None
 
     model_config = {
         "from_attributes": True
@@ -185,9 +187,14 @@ class ApplicationStats(BaseModel):
 class ApplicationUserBase(BaseModel):
     application_id: int
     selected: bool
+    risk_id: int
 
 class ApplicationUserUpdate(ApplicationUserBase):
     pass
+
+class RiskBase(BaseModel):
+    id: int
+    name: str
 
 
 # LanguageModel
