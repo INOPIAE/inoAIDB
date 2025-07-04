@@ -107,4 +107,5 @@ export default {
   saveSuccess: "Changes saved.",
   exportCSV: "CSV Export",
   errorCSVFailed: "CSV excport failed",
+  searchManufacturer: "Search manufacturer",
 }
