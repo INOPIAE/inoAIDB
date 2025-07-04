@@ -2,33 +2,44 @@
   <div>
     <v-container>
       <v-row class="justify-space-between align-center mb-4">
-        <v-col>
+        <v-col cols="12" sm="6">
           <h2>{{ t('manufacturer') }}</h2>
         </v-col>
-        <v-col class="text-right">
-          <v-btn v-if="authStore.isAuthenticated" @click="createItem" color="primary">{{ t('new') }}</v-btn>
+        <v-col cols="12" sm="6" class="text-right">
+          <v-text-field
+            v-model="search"
+            :label="t('searchManufacturer')"
+            class="mb-4"
+            prepend-inner-icon="mdi-magnify"
+            clearable
+          />
         </v-col>
       </v-row>
-      <v-table>
-        <thead>
-          <tr>
-            <th>{{ t('name') }}</th>
-            <th>{{ t('description') }}</th>
-            <th v-if="authStore.isAuthenticated">{{ t('active') }}</th>
-            <th v-if="authStore.isAuthenticated">{{ t('actions') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="m in manufacturers" :key="m.id">
-            <td>{{ m.name }}</td>
-            <td>{{ m.description }}</td>
-            <td v-if="authStore.isAuthenticated">{{ m.is_active ? t('yes') : t('no') }}</td>
-            <td v-if="authStore.isAuthenticated">
-              <v-btn @click="editItem(m)" size="small" color="primary">{{ t('edit') }}</v-btn>
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
+
+      <v-row>
+        <v-col cols="12" class="text-right" v-if="authStore.user?.is_admin">
+          <v-btn @click="createItem" color="secondary">
+            {{ t('new') }}
+          </v-btn>
+        </v-col>
+      </v-row>
+
+      <v-data-table
+        :headers="headers"
+        :items="filteredManufacturers"
+        :items-per-page="10"
+        class="elevation-1"
+      >
+        <template #item.is_active="{ item }" v-if="authStore.user?.is_admin">
+          {{ item.is_active ? t('yes') : t('no') }}
+        </template>
+
+        <template #item.actions="{ item }" v-if="authStore.user?.is_admin">
+          <v-btn @click="editItem(item)" size="small" color="primary">
+            {{ t('edit') }}
+          </v-btn>
+        </template>
+      </v-data-table>
     </v-container>
 
     <v-dialog v-model="dialog" max-width="600px">
@@ -54,23 +65,44 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
-
 const authStore = useAuthStore()
+
 const manufacturers = ref([])
+const search = ref('')
 const dialog = ref(false)
+
 const editedItem = ref({
   id: null,
   name: '',
   description: '',
-  is_active: true
+  is_active: true,
 })
 
+const headers = computed(() => {
+  const base = [
+    { title: t('name'), key: 'name' },
+    { title: t('description'), key: 'description' }
+  ]
+  if (authStore.user?.is_admin) {
+    base.push(
+      { title: t('active'), key: 'is_active' },
+      { title: t('actions'), key: 'actions', sortable: false }
+    )
+  }
+  return base
+})
+
+const filteredManufacturers = computed(() => {
+  if (!search.value) return manufacturers.value
+  const lower = search.value.toLowerCase()
+  return manufacturers.value.filter(m => m.name.toLowerCase().includes(lower))
+})
 
 const fetchManufacturers = async () => {
   const res = await axios.get('/api/manufacturers')
