@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session, aliased
 from typing import List
 from fastapi.responses import StreamingResponse
@@ -6,8 +7,8 @@ import csv
 import io
 
 from app.database import SessionLocal
-from app.schemas import ApplicationOut, ApplicationWithManufacturerOut, CreateApplication, ApplicationStats, ApplicationUserUpdate
-from app.models import Application, Manufacturer, User, LanguageModel, ModelChoice, ApplicationUser
+from app.schemas import ApplicationOut, ApplicationWithManufacturerOut, CreateApplication, ApplicationStats, ApplicationUserUpdate, RiskBase
+from app.models import Application, Manufacturer, User, LanguageModel, ModelChoice, ApplicationUser, Risk
 from app.api.deps import get_current_user
 
 router = APIRouter()
@@ -49,6 +50,9 @@ def create_application(application: CreateApplication, db: Session = Depends(get
     db.refresh(db_application)
     return db_application
 
+@router.get("/risk", response_model=List[RiskBase])
+def get_risks(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return db.query(Risk).order_by(Risk.sort.asc()).all()
 
 @router.get("/", response_model=List[ApplicationOut])
 def get_applications(db: Session = Depends(get_db)):
@@ -117,14 +121,14 @@ def get_applications_with_manufacturer(db: Session = Depends(get_db), current_us
             ModelChoice.name.label("modelchoice_name"),
             AU.id.label("applicationuser_id"),
             AU.selected.label("applicationuser_selected"),
+            Risk.id.label("risk_id"),
+            Risk.name.label("risk_name"),
         )
         .join(Manufacturer, Application.manufacturer_id == Manufacturer.id)
         .join(LanguageModel, Application.languagemodel_id == LanguageModel.id)
         .join(ModelChoice, Application.modelchoice_id == ModelChoice.id)
-        .outerjoin(
-            AU,
-            (AU.application_id == Application.id) & (AU.user_id == current_user.id)
-        )
+        .outerjoin(AU, (AU.application_id == Application.id) & (AU.user_id == current_user.id))
+        .outerjoin(Risk, Risk.id == AU.risk_id)
     )
 
     if not current_user.is_admin:
@@ -146,6 +150,8 @@ def get_applications_with_manufacturer(db: Session = Depends(get_db), current_us
             "modelchoice_name": r.modelchoice_name,
             "applicationuser_id": r.applicationuser_id if r.applicationuser_id else 0,
             "applicationuser_selected": r.applicationuser_selected if r.applicationuser_selected else False,
+            "risk_id": r.risk_id if r.risk_id else 1,
+            "risk_name": r.risk_name if r.risk_name else "unknown",
         }
         for r in rows
     ]
@@ -229,6 +235,13 @@ def save_user_applications(
             detail=f"Application with id {app.application_id} not found"
         )
 
+    risk = db.query(Risk).filter_by(id=app.risk_id).first()
+    if not risk:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Risk not found"
+        )
+
     entry = (
         db.query(ApplicationUser)
         .filter_by(user_id=current_user.id, application_id=app.application_id)
@@ -236,11 +249,13 @@ def save_user_applications(
     )
     if entry:
         entry.selected = app.selected
+        entry.risk_id = app.risk_id
     else:
         new_entry = ApplicationUser(
             user_id=current_user.id,
             application_id=app.application_id,
-            selected=app.selected
+            selected=app.selected,
+            risk_id=app.risk_id
         )
         db.add(new_entry)
 
@@ -255,7 +270,7 @@ def export_applications_csv(db: Session = Depends(get_db), current_user: User = 
 
     output = io.StringIO()
     writer = csv.writer(output, quoting=csv.QUOTE_ALL)
-    writer.writerow(["Application", "Description", "Manufacturer", "LanguageModel", "ModelChoice", "Selected"])
+    writer.writerow(["Application", "Description", "Manufacturer", "LanguageModel", "ModelChoice", "Selected", "Risk"])
 
     AU = aliased(ApplicationUser)
 
@@ -267,11 +282,13 @@ def export_applications_csv(db: Session = Depends(get_db), current_user: User = 
             LanguageModel.name.label("languagemodel_name"),
             ModelChoice.name.label("modelchoice_name"),
             AU.selected.label("applicationuser_selected"),
+            func.coalesce(Risk.name, "unknown").label("risk_name"),
         )
         .join(Manufacturer, Application.manufacturer_id == Manufacturer.id)
         .join(LanguageModel, Application.languagemodel_id == LanguageModel.id)
         .join(ModelChoice, Application.modelchoice_id == ModelChoice.id)
         .outerjoin(AU, (AU.application_id == Application.id) & (AU.user_id == current_user.id))
+        .outerjoin(Risk, Risk.id == AU.risk_id)
         .filter(Application.is_active == True) 
         .all()
     )
@@ -281,10 +298,10 @@ def export_applications_csv(db: Session = Depends(get_db), current_user: User = 
 
     output.seek(0)
 
-    # StreamingResponse erwartet bytes, also StringIO -> BytesIO mit Encoding umwandeln
     response = StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=applications.csv"}
     )
     return response
+

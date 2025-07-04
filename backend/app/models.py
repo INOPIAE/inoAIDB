@@ -107,6 +107,15 @@ class ApplicationUser(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     application_id = Column(Integer, ForeignKey("applications.id"), nullable=False)
     selected = Column(Boolean, default=False)
+    risk_id = Column(Integer, ForeignKey("risk.id"), nullable=True)
 
     applications = relationship("Application")
     user = relationship("User")
+
+class Risk(Base):
+    __tablename__ = "risk"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    sort = Column(Integer, nullable=True)
+
+    application_users = relationship("ApplicationUser")

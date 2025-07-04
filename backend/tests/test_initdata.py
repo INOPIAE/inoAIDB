@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.models import Base, AuthInvite, ModelChoice
+from app.models import Base, AuthInvite, ModelChoice, Risk
 from app.init_data import ensure_default_invite_exists
 
 # Testdatenbank (in-memory SQLite)
@@ -34,6 +34,16 @@ def test_ensure_default_invite_creates_records(test_db):
     assert "company" in names
     assert "web_company" in names
 
+    risk = test_db.query(Risk).all()
+    assert len(risk) == 7
+    names = [rk.name for rk in risk]
+    assert "unknown" in names
+    assert "minimal" in names
+    assert "low" in names
+    assert "medium" in names
+    assert "high" in names
+    assert "deferred" in names
+
     ensure_default_invite_exists(test_db)
 
     invites = test_db.query(AuthInvite).all()
@@ -41,3 +51,38 @@ def test_ensure_default_invite_creates_records(test_db):
 
     model_choices = test_db.query(ModelChoice).all()
     assert len(model_choices) == 4
+
+    risk = test_db.query(Risk).all()
+    assert len(risk) == 7
+
+def test_ensure_default_invite_update_risks_sort(test_db):
+    ensure_default_invite_exists(test_db)
+
+    updates = {
+        1: 30,
+        2: 35,
+    }
+
+    for risk_id, new_sort in updates.items():
+        entry = test_db.query(Risk).filter_by(id=risk_id).first()
+        if entry:
+            entry.sort = new_sort
+            print(f"Updated Risk id={risk_id} with sort={new_sort}")
+    test_db.commit()
+
+
+    ensure_default_invite_exists(test_db)
+
+    risk = test_db.query(Risk).all()
+    assert len(risk) == 7
+
+    risk1 = test_db.query(Risk).filter_by(id=1).first()
+    risk2 = test_db.query(Risk).filter_by(id=2).first()
+
+    
+    assert risk1.name == 'unknown'
+    assert risk1.sort == 1
+
+    assert risk2.name == 'irrelevant'
+    assert risk2.sort == 2
+    

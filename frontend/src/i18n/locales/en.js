@@ -108,4 +108,12 @@ export default {
   exportCSV: "CSV Export",
   errorCSVFailed: "CSV excport failed",
   searchManufacturer: "Search manufacturer",
+  r_unknown: "unknown",
+  r_irrelevant: "irrelevant",
+  r_low: "low",
+  r_medium: "medium",
+  r_high: "high",
+  r_minimal: "minimal",
+  r_deferred: "deferred",
+  risk: 'Risk',
 }
