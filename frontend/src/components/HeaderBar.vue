@@ -12,7 +12,7 @@
           class="d-flex align-center"
           aria-label="Sprache wechseln"
         >
-          <span :class="`fi fi-${currentFlag}`" style="font-size: 1.8rem;"></span>
+          <span :class="`fi fi-${currentFlag}`" style="font-size: 1.8rem;" />
         </v-btn>
       </template>
 
@@ -23,7 +23,7 @@
           @click="changeLanguage(code)"
         >
           <v-list-item-icon>
-            <span :class="`fi fi-${lang.flag}`" style="font-size: 1.8rem;"></span>
+            <span :class="`fi fi-${lang.flag}`" style="font-size: 1.8rem;" />
           </v-list-item-icon>
           <v-list-item-title>{{ lang.label }}</v-list-item-title>
         </v-list-item>
@@ -33,21 +33,22 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { locale } = useI18n()
 
 const languages = {
-  de: { label: 'Deutsch', flag: 'de' },
   en: { label: 'English', flag: 'gb' },
+  de: { label: 'Deutsch', flag: 'de' },
 }
 
-const currentFlag = ref(languages[locale.value]?.flag || 'gb')
+const currentFlag = computed(() => {
+  return languages[locale.value]?.flag || 'gb'
+})
 
 function changeLanguage(lang) {
   locale.value = lang
   localStorage.setItem('lang', lang)
-  currentFlag.value = languages[lang].flag
 }
 </script>

@@ -1,11 +1,16 @@
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import vuetify from 'vite-plugin-vuetify'
 import path from 'path'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd())
+
   return {
-    plugins: [vue()],
+    plugins: [
+      vue(),
+      vuetify({ autoImport: true }),
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src'),
@@ -25,6 +30,30 @@ export default defineConfig(({ mode }) => {
     build: {
       manifest: true,
       outDir: 'dist',
+    },
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: './src/setupTests.js',
+      mockReset: true,
+      css: true, // neu: verhindert CSS-Fehler
+
+  // wichtige Ergänzung:
+      resolveSnapshotPath: true,
+      alias: {
+        '@': path.resolve(__dirname, 'src'),
+      },
+      files: ['**/*.spec.js'],
+      transformMode: {
+        web: [/\.vue$/, /\.js$/]
+      },
+      deps: {
+        optimizer: {
+          web: {
+            include: ['vuetify'],
+          },
+        },
+      },
     },
   }
 })
