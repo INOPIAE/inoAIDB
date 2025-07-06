@@ -123,4 +123,6 @@ export default {
   changeLanguage: 'Change Language',
   optional: 'Optional',
   errorUnkown: 'Unknown error',
+  similarManufacturersFound: 'Similar manufacturers found',
+  similarApplicationsFound: 'Similar applications found',
 }

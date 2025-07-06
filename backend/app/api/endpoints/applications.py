@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import func
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy import func, text
 from sqlalchemy.orm import Session, aliased
 from typing import List
 from fastapi.responses import StreamingResponse
@@ -53,6 +53,23 @@ def create_application(application: CreateApplication, db: Session = Depends(get
 @router.get("/risk", response_model=List[RiskBase])
 def get_risks(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return db.query(Risk).order_by(Risk.sort.asc()).all()
+
+def search_applications_by_similarity(db: Session, query: str, threshold: float = 0.3, limit: int = 10) -> List[Application]:
+    sql = text("""
+        SELECT * FROM applications
+        WHERE similarity(name, :query) > :threshold
+        ORDER BY similarity(name, :query) DESC
+        LIMIT :limit
+    """)
+    return db.execute(sql, {"query": query, "threshold": threshold, "limit": limit}).fetchall()
+
+@router.get("/search", response_model=list[ApplicationOut])
+def search_applications(
+    q: str = Query(..., min_length=2, description="Suchbegriff"),
+    db: Session = Depends(get_db)
+):
+    results = search_applications_by_similarity(db, query=q)
+    return results
 
 @router.get("/", response_model=List[ApplicationOut])
 def get_applications(db: Session = Depends(get_db)):

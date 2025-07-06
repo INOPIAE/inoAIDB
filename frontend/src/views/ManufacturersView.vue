@@ -49,11 +49,20 @@
         </v-card-title>
 
         <v-card-text>
-          <v-text-field v-model="editedItem.name" :label="t('name')" />
+          <v-text-field v-model="editedItem.name" :label="t('name')" @input="checkForSimilarNames" />
+          <div v-if="similarManufacturers.length > 0" class="mt-2">
+            <v-alert type="warning" dense>
+              {{ t('similarManufacturersFound') }}:
+              <ul>
+                <li v-for="m in similarManufacturers" :key="m.id">
+                  {{ m.name }}
+                </li>
+              </ul>
+            </v-alert>
+          </div>
           <v-textarea v-model="editedItem.description" :label="t('description')" />
           <v-checkbox v-model="editedItem.is_active" :label="t('active')" />
         </v-card-text>
-
         <v-card-actions>
           <v-spacer />
           <v-btn text @click="dialog = false">{{ t('cancel') }}</v-btn>
@@ -76,6 +85,26 @@ const authStore = useAuthStore()
 const manufacturers = ref([])
 const search = ref('')
 const dialog = ref(false)
+
+const similarManufacturers = ref([])
+
+const checkForSimilarNames = async () => {
+  if (!editedItem.value.name || editedItem.value.name.length < 2) {
+    similarManufacturers.value = []
+    return
+  }
+  try {
+    const res = await axios.get('/api/manufacturers/search', {
+      params: { q: editedItem.value.name }
+    })
+    similarManufacturers.value = res.data.filter(
+      m => m.id !== editedItem.value.id
+    )
+  } catch (err) {
+    console.error('Error similarity search', err)
+  }
+}
+
 
 const editedItem = ref({
   id: null,

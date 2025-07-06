@@ -1,3 +1,5 @@
+from app.models import Manufacturer
+
 def new_manufacturer(authenticated_client):
     response = authenticated_client.post("api/manufacturers/", json={
         "name": "Test Manufacturer",
@@ -96,3 +98,25 @@ def test_create_manufacturer_double(authenticated_client_for_email):
     assert response.status_code == 400
     data = response.json()
     assert data["detail"] == "Manufacturer already exists"
+
+def test_search_manufacturers(client, db):
+    db.add_all([
+        Manufacturer(name="Applex", description="Tech", is_active=True),
+        Manufacturer(name="Amazon", description="Tech", is_active=True),
+    ])
+    db.commit()
+
+    response = client.get("/api/manufacturers/search?q=appl")
+    assert response.status_code == 200
+    data = response.json()
+    names = [item["name"] for item in data]
+    assert "Apple" in names
+    assert "Applex" in names
+    assert "Microsoft" not in names
+    assert "Amazon" not in names
+
+    response = client.get("/api/manufacturers/search?q=ibm")
+    assert response.status_code == 200
+    data = response.json()
+    assert data == []
+    assert len(data) == 0

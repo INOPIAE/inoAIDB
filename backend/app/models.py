@@ -1,5 +1,5 @@
 from datetime import datetime, UTC
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -53,6 +53,10 @@ class Manufacturer(Base):
     is_active = Column(Boolean, default=True)
     applications = relationship("Application", back_populates="manufacturer", cascade="all, delete")
 
+    __table_args__ = (
+        Index('ix_manufacturer_name_trgm', 'name', postgresql_using='gin', postgresql_ops={'name': 'gin_trgm_ops'}),
+    )
+
 
 class Application(Base):
     __tablename__ = "applications"
@@ -70,6 +74,10 @@ class Application(Base):
     manufacturer = relationship("Manufacturer", back_populates="applications")
     languagemodel = relationship("LanguageModel", back_populates="applications")
     modelchoice = relationship("ModelChoice", back_populates="applications")
+
+    __table_args__ = (
+        Index('ix_application_name_trgm', 'name', postgresql_using='gin', postgresql_ops={'name': 'gin_trgm_ops'}),
+    )
 
 class LanguageModel(Base):
     __tablename__ = "language_models"

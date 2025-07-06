@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-#from app import models, schemas
+from sqlalchemy import text
+from typing import List
 
 from app.database import SessionLocal
 from app.schemas import ManufacturerOut, ManufacturerCreate, ManufacturerUpdate
@@ -30,6 +31,23 @@ def create_manufacturer(manufacturer: ManufacturerCreate, db: Session = Depends(
 @router.get("/", response_model=list[ManufacturerOut])
 def read_manufacturers(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return db.query(Manufacturer).order_by(Manufacturer.name.asc()).offset(skip).limit(limit).all()
+
+def search_manufacturers_by_similarity(db: Session, query: str, threshold: float = 0.3, limit: int = 20) -> List[Manufacturer]:
+    sql = text("""
+        SELECT * FROM manufacturers
+        WHERE similarity(name, :query) > :threshold
+        ORDER BY similarity(name, :query) DESC
+        LIMIT :limit
+    """)
+    return db.execute(sql, {"query": query, "threshold": threshold, "limit": limit}).fetchall()
+
+@router.get("/search", response_model=list[ManufacturerOut])
+def search_manufacturers(
+    q: str = Query(..., min_length=2, description="Suchbegriff"),
+    db: Session = Depends(get_db)
+):
+    results = search_manufacturers_by_similarity(db, query=q)
+    return results
 
 
 @router.get("/{manufacturer_id}", response_model=ManufacturerOut)

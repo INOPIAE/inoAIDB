@@ -88,7 +88,17 @@
           {{ form.id ? $t('editApplication') : $t('newApplication') }}
         </v-card-title>
         <v-card-text>
-          <v-text-field v-model="form.name" :label="$t('name')" />
+          <v-text-field v-model="form.name" :label="$t('name')" @input="checkForSimilarNames" />
+          <div v-if="similarApplications.length > 0" class="mt-2">
+          <v-alert type="warning" dense>
+            {{ t('similarApplicationsFound') }}:
+            <ul>
+              <li v-for="m in similarApplications" :key="m.id">
+                {{ m.name }}
+              </li>
+            </ul>
+          </v-alert>
+        </div>
           <v-textarea v-model="form.description" :label="$t('description')" />
           <v-select
             v-model="form.manufacturer_id"
@@ -145,6 +155,26 @@ const searchText = ref('')
 
 const loading = ref(false)
 const error = ref(null)
+
+const similarApplications = ref([])
+
+const checkForSimilarNames = async () => {
+  if (!form.value.name || form.value.name.length < 2) {
+    similarApplications.value = []
+    return
+  }
+  try {
+    const res = await axios.get('/api/applications/search', {
+      params: { q: form.value.name }
+    })
+    similarApplications.value = res.data.filter(
+      m => m.id !== form.value.id
+    )
+  } catch (err) {
+    console.error('Error similarity search', err)
+  }
+}
+
 
 const visibleHeaders = computed(() => {
   let base = [

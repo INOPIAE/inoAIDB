@@ -1,6 +1,6 @@
 import io
 import csv
-from app.models import ApplicationUser
+from app.models import ApplicationUser, Application
 
 def new_application(authenticated_client):
     response = authenticated_client.post("api/applications/", json={
@@ -434,3 +434,26 @@ def test_get_risk_no_user(client):
     response = client.get("/api/applications/risk")
     assert response.status_code == 401
     assert response.json()["detail"] == "Not authenticated"
+
+def test_search_applications(client, db):
+    db.add_all([
+        Application(name="Libre Office", description="software", manufacturer_id=1, languagemodel_id = 1, modelchoice_id = 1, is_active=True),
+        Application(name="MS Office", description="software", manufacturer_id=1, languagemodel_id = 1, modelchoice_id = 1, is_active=True)
+    ])
+    db.commit()
+
+    response = client.get("/api/applications/search?q=office")
+    assert response.status_code == 200
+    data = response.json()
+    names = [item["name"] for item in data]
+    assert "Office" in names
+    assert "Libre Office" in names
+    assert "MS Office" in names
+    assert "Visual Studio Code" not in names
+    assert "Alexa" not in names
+
+    response = client.get("/api/applications/search?q=power bi")
+    assert response.status_code == 200
+    data = response.json()
+    assert data == []
+    assert len(data) == 0
