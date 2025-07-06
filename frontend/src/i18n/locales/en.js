@@ -116,4 +116,11 @@ export default {
   r_minimal: "minimal",
   r_deferred: "deferred",
   risk: 'Risk',
+  errorSavingUser: 'Error while saving user entry',
+  errorOccured: 'An error occured',
+  errorTokenProblem: 'Invalid or missing token.',
+  unknown: 'unknown',
+  changeLanguage: 'Change Language',
+  optional: 'Optional',
+  errorUnkown: 'Unknown error',
 }

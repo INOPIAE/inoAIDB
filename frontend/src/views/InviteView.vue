@@ -7,7 +7,7 @@
       <v-text-field
         v-model="newInvite.code"
         :label="t('code')"
-        placeholder="Optional"
+        placeholder="$t('optional')"
       />
       <v-text-field
         v-model.number="newInvite.use_max"

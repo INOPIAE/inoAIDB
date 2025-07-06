@@ -46,7 +46,7 @@
       class="elevation-1"
     >
       <template v-slot:item.modelchoice_name="{ item }">
-        {{ $t("mc_" + item.modelchoice_name) }}
+        {{ $t('mc_' + item.modelchoice_name) }}
       </template>
 
       <template #item.applicationuser_selected="{ item }">
@@ -212,7 +212,7 @@ const loadApplications = async () => {
     originalApplications.value = res.data.map(app => ({ ...app }))
   } catch (e) {
     console.error('Error loading applications:', e)
-    error.value = e.message || 'Unknown error'
+    error.value = e.message || t('errorUnkown')
   } finally {
     loading.value = false
   }

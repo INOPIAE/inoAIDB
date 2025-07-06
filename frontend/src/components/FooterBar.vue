@@ -30,5 +30,5 @@ const authStore = useAuthStore()
 
 const currentYear = new Date().getFullYear()
 const displayYear = currentYear > 2025 ? `2025-${currentYear}` : '2025'
-const poweredBy = import.meta.env.VITE_POWEREDBY || 'Unknown'
+const poweredBy = import.meta.env.VITE_POWEREDBY || t('unknown')
 </script>

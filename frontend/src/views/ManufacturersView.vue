@@ -111,7 +111,7 @@ const fetchManufacturers = async () => {
 
 const saveManufacturer = async () => {
   if (!authStore.isAuthenticated || !authStore.token) {
-    alert(t('alertManufacturer'))
+    alert(t('errorsNotLoggedIn'))
     return
   }
 

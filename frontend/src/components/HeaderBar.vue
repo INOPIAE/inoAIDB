@@ -10,7 +10,7 @@
           v-bind="props"
           icon
           class="d-flex align-center"
-          aria-label="Sprache wechseln"
+          aria-label="$t('changeLanguage')"
         >
           <span :class="`fi fi-${currentFlag}`" style="font-size: 1.8rem;"></span>
         </v-btn>

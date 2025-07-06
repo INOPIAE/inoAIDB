@@ -116,4 +116,11 @@ export default {
   r_minimal: "minimal",
   r_deferred: "zurückgestellt",
   risk: 'Risiko',
+  errorSavingUser: 'Fehler beim Speichern des Nutzereintrags',
+  errorOccured: 'Ein Fehler ist aufgetreten',
+  errorTokenProblem: 'Ungültiger oder fehlender Token.',
+  unknown: 'unbekannt',
+  changeLanguage: 'Sprache wechseln',
+  optional: 'Optional',
+  errorUnkown: 'Unbekannter Fehler',
 }

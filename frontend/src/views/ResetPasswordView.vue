@@ -44,7 +44,7 @@ const resetPassword = async () => {
   message.value = ''
 
   if (!token.value) {
-    error.value = 'Invalid or missing token.'
+    error.value = t('errorTokenProblem')
     return
   }
 
@@ -60,7 +60,7 @@ const resetPassword = async () => {
     }, 2000)
 
   } catch (err) {
-    error.value = err.response?.data?.detail || 'An error occurred'
+    error.value = err.response?.data?.detail || t('errorOccured')
   }
 }
 </script>
