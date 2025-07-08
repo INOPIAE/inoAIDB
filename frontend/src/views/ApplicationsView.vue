@@ -103,7 +103,7 @@
           <v-select
             v-model="form.manufacturer_id"
             :items="manufacturers"
-            item-title="name"
+            :item-title="translateManufacturer"
             item-value="id"
             :label="$t('manufacturer')"
           />
@@ -331,6 +331,10 @@ const loadModelChoices = async () => {
 
 function translateModelChoice(item) {
   return t(`mc_${item.name}`) || item.name
+}
+
+function translateManufacturer(item) {
+  return t(`${item.name}`) || item.name
 }
 
 function translateRisk(item) {
