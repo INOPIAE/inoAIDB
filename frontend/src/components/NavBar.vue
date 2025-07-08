@@ -42,6 +42,12 @@ export default {
         const authStore = useAuthStore();
         const { t } = useI18n()
         const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
+        const raw_mount = import.meta.env.VITE_ROOT_MOUNT;
+        const root_mount = (!raw_mount || raw_mount.toLowerCase() === "none") ? "" : raw_mount;
+
+        console.log(backendUrl)
+        console.log(root_mount)
+        console.log(`${backendUrl}${root_mount}/docs`)
         const items = computed(() => [
             {
                 title: 'home',
@@ -133,7 +139,7 @@ export default {
                 title: 'apiDocumentation',
                 style: 'external',
                 icon: 'mdi-api',
-                href: `${backendUrl}/docs`,
+                href: `${backendUrl}${root_mount}/docs`,
                 condition:  null,
             },
             {

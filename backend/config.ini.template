@@ -24,6 +24,7 @@ db_password=testpassword
 
 [application]
 poweredby = COMPANY
+root_mount = None
 
 [contact]
 name = John Doe

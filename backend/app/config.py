@@ -43,6 +43,7 @@ class Settings:
 
         application_section = parser["application"]
         self.poweredby = application_section["poweredby"]
+        self.root_mount = application_section.get("root_mount", None)
 
         contact_section = parser["contact"]
         self.contact_name = contact_section["name"]

@@ -22,19 +22,24 @@ async def lifespan(app: FastAPI):
 
     yield
 
-app = FastAPI(
-    title="inoAIDB API",
-    version="1.0.0",
-    description="inoAIDB API Documentation",
-    terms_of_service=settings.contact_tos,
-    contact={
+fastapi_kwargs = {
+    "title": "inoAIDB API",
+    "version": "1.0.0",
+    "description": "inoAIDB API Documentation",
+    "terms_of_service": settings.contact_tos,
+    "contact": {
         "name": settings.contact_name,
         "email": settings.contact_email,
         "url": settings.contact_url,
     },
-    docs_url="/docs",
-    lifespan=lifespan,
-)
+    "docs_url": "/docs",
+    "lifespan": lifespan,
+}
+
+if settings.root_mount not in (None, "", "None", "none"):
+    fastapi_kwargs["root_path"] = settings.root_mount
+
+app = FastAPI(**fastapi_kwargs)
 
 origins = [
     "http://localhost:5173",
