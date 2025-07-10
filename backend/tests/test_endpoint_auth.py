@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 from app import models
 from app.models import PasswordResetToken, User
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, UTC, timezone
 import secrets
 
 def test_login_success(client, valid_otp_for_email):
@@ -46,6 +46,22 @@ def test_login_success_wrong_otp(client, db):
     assert response.status_code == 401
     assert data["detail"] == "Invalid OTP code"
 
+def test_login_expired(client, valid_otp_for_email, db):
+    email = "admin@example.com"
+    user = db.query(User).filter(User.email == email).first()
+    user.expire = datetime.now(timezone.utc) - timedelta(days=1)
+    db.commit() 
+    
+    valid_otp = valid_otp_for_email(email)
+    response = client.post("api/auth/login", json={
+        "email": email,
+        "password": "passwordpassword", 
+        "otp": valid_otp
+    })
+    data = response.json()
+    assert response.status_code == 403
+    assert data["detail"] == "User account expired"
+
 def test_verify_otp_success(client, valid_otp_for_email):
     email = "admin@example.com"
     valid_otp = valid_otp_for_email(email)
@@ -76,8 +92,8 @@ def test_verify_otp_user_without_secret(client):
     assert response.json()["detail"] == "OTP not set up"
 
 
-def create_invite_in_db(db, code: str, use_max: int = 5, use_count: int = 0):
-    invite = models.AuthInvite(code=code, use_max=use_max, use_count=use_count)
+def create_invite_in_db(db, code: str, use_max: int = 5, use_count: int = 0, duration_month: int = 0):
+    invite = models.AuthInvite(code=code, use_max=use_max, use_count=use_count, duration_month=duration_month)
     db.add(invite)
     db.commit()
     return invite
@@ -94,11 +110,25 @@ def test_create_invite(authenticated_client_for_email, db):
     assert "code" in data
     assert data["use_max"] == 5
 
-    # Optional: prüfe, ob Invite auch in DB ist
     db_invite = db.query(models.AuthInvite).filter_by(code=data["code"]).first()
     assert db_invite is not None
     assert db_invite.use_max == 5
     assert db_invite.use_count == 0
+    assert db_invite.duration_month == 0
+
+    response = client.post("/api/auth/invite", json={"use_max": 5, "duration_month": 3})
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert "code" in data
+    assert data["use_max"] == 5
+
+    db_invite = db.query(models.AuthInvite).filter_by(code=data["code"]).first()
+    assert db_invite is not None
+    assert db_invite.use_max == 5
+    assert db_invite.use_count == 0
+    assert db_invite.duration_month == 3
+
 
 def test_create_invite_no_admin(authenticated_client_for_email, client):
     email = "user@example.com"

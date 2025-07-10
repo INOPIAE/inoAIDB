@@ -1,5 +1,6 @@
 import pyotp
-
+from datetime import datetime, UTC
+from dateutil.relativedelta import relativedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
@@ -38,6 +39,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db), current_user: U
         totp_secret=totp_seed,
         is_active=user.is_active,
         is_admin=user.is_admin,
+        expire = calculate_expire(user.expire) if user.expire else None,
     )
     db.add(new_user)
     db.commit()
@@ -105,6 +107,10 @@ def change_password(request: ChangePasswordRequest, current_user: User = Depends
 
     return {"detail": "Password changed successfully"}
 
+def calculate_expire(duration: int) -> datetime | None:
+    if duration == 0:
+        return None
+    return datetime.now(UTC) + relativedelta(months=duration)
 
 @router.post("/register", response_model=RegisterResponse)
 def register(request: RegisterRequest, db: Session = Depends(get_db)):
@@ -136,6 +142,7 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
         hashed_password=hashed_password,
         totp_secret=totp_seed,
         is_admin=is_admin,
+        expire= calculate_expire(invite.duration_month)
     )
     db.add(new_user)
 

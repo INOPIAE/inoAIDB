@@ -99,7 +99,7 @@ def setup_test_data(db):
     app3 = Application(name="Alexa", description="software", manufacturer_id=2, languagemodel_id = 1, modelchoice_id = 1, is_active=False)
 
     inv1 = AuthInvite(code = "SpecialInvite", use_count = 0, use_max = 1)
-    inv2 = AuthInvite(code = "invite1", use_count = 1, use_max = 2)
+    inv2 = AuthInvite(code = "invite1", use_count = 1, use_max = 2, duration_month=6)
     inv3 = AuthInvite(code = "invite2", use_count = 1, use_max = 1)
 
     risks_to_create = [

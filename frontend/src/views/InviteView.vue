@@ -15,6 +15,12 @@
         type="number"
         min="1"
       />
+            <v-text-field
+        v-model.number="newInvite.duration_month"
+        :label="t('Duration (month)')"
+        type="number"
+        min="1"
+      />
       <v-btn @click="createInvite" color="primary">{{ t('create') }}</v-btn>
     </v-card>
 
@@ -49,13 +55,14 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 
 const invites = ref([])
-const newInvite = ref({ code: '', use_max: 1 })
+const newInvite = ref({ code: '', use_max: 1, duration_month: 0 })
 const checkCode = ref('')
 const checkedUsesLeft = ref(null)
 
 const headers = [
   { title: t('code'), value: 'code' },
   { title: t('usesLeft'), value: 'use_left' },
+  { title: t('Duration (month)'), value: 'duration_month' },
 ]
 
 const fetchInvites = async () => {
@@ -91,7 +98,6 @@ const checkInvite = async () => {
 }
 
 onMounted(() => {
-  // Wenn nicht eingeloggt oder kein Admin, umleiten zum Login
   if (!authStore.user || !authStore.user.is_admin) {
     router.push('/login')
   } else {

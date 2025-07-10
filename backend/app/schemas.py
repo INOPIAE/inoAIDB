@@ -25,6 +25,7 @@ class ChangePasswordRequest(BaseModel):
 class AuthInviteCreateRequest(BaseModel):
     code: Optional[str] = Field(None, description="Optional invite code. If not provided, a random code will be generated.")
     use_max: Optional[int] = Field(1, description="Maximum number of uses for the invite.")
+    duration_month: Optional[int] = Field(0, description="Duration in months for which the invite is valid. 0 means no expiration.")
 
 
 class AuthInviteCreateResponse(BaseModel):
@@ -66,6 +67,7 @@ class UserBase(BaseModel):
     email: EmailStr
     is_active: Optional[bool] = True
     is_admin: Optional[bool] = False
+    expire: Optional[datetime] = None
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=6)
@@ -82,6 +84,7 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     is_active: Optional[bool] = None
     is_admin: Optional[bool] = None
+    expire: Optional[datetime] = None
 
 class UserLogin(BaseModel):
     email: EmailStr

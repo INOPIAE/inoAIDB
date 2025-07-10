@@ -16,6 +16,7 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     totp_secret = Column(String, nullable=True)
+    expire = Column(DateTime(timezone=True), nullable=True)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
 
@@ -39,6 +40,7 @@ class AuthInvite(Base):
     code = Column(String, unique=True, nullable=False)
     use_count = Column(Integer, default=0)
     use_max = Column(Integer, nullable=False, default=1)
+    duration_month = Column(Integer, default=0)
     created = Column(DateTime(timezone=True), server_default=func.now())
 
 

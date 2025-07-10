@@ -1,3 +1,5 @@
+from datetime import datetime, timezone, UTC
+from dateutil.relativedelta import relativedelta
 from app.models import Application, AuthInvite, Manufacturer, User
 
 def new_user(authenticated_client):
@@ -228,7 +230,7 @@ def test_change_password_wrong_otp(authenticated_client_for_email):
     data = response.json()
     assert data["detail"] == "Invalid credentials"
 
-def test_register(client):
+def test_register(client, db):
     payload = {
         "username": "demo",
         "email": "test3@example.com",
@@ -243,6 +245,14 @@ def test_register(client):
     assert data["user"]["username"] == "demo"
     assert data["user"]["email"] == "test3@example.com"
     assert data["totp_uri"].startswith("otpauth://totp/")
+
+    user = db.query(User).filter(User.email == "test3@example.com").first()
+    assert user is not None
+    assert user.is_admin is False
+    assert user.expire is not None
+    expected = datetime.now(UTC) + relativedelta(months=6)
+    assert user.expire.date() == expected.date()
+
 
 def test_register_existing_entries(client):
     payload = {
@@ -318,6 +328,7 @@ def test_register_SpecialInvite(client, db):
     user = db.query(User).filter(User.email == "test4@example.com").first()
     assert user is not None
     assert user.is_admin is True
+    assert user.expire is None
 
 def test_register_missing_Accept(client):
     payload = {
@@ -330,6 +341,5 @@ def test_register_missing_Accept(client):
 
     response = client.post("/api/users/register", json=payload)
     data = response.json()
-    print(data) 
     assert response.status_code == 400
     assert data["detail"] == "Missing accepted terms"
