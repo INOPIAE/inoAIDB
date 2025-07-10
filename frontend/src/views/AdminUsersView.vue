@@ -3,6 +3,9 @@
     <h2>{{ t('userManagement') }}</h2>
 
     <v-data-table :items="users" :headers="headers" item-value="id">
+      <template #item.expire="{ item }">
+        {{ formatExpire(item.expire) }}
+      </template>
       <template #item.is_active="{ item }">
         <v-chip :color="item.is_active ? 'green' : 'red'" dark>
           {{ item.is_active ? t('active') : t('inactive') }}
@@ -26,6 +29,7 @@
     <v-card-text>
       <v-text-field v-model="editedUser.username" :label="t('username')" />
       <v-text-field v-model="editedUser.email" :label="t('email')" />
+      <v-text-field v-model="editedUser.expire" :label="t('expire')" />
       <v-switch v-model="editedUser.is_active" :label="t('activeLabel')" />
       <v-switch v-model="editedUser.is_admin" :label="t('admin')" />
     </v-card-text>
@@ -45,14 +49,16 @@ import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import axios from 'axios'
 import { useI18n } from 'vue-i18n'
+import { useFormat } from '@/composables/useFormat'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 const users = ref([])
 
 const headers = [
   { title: t('name'), value: 'username' },
   { title: t('email'), value: 'email' },
+  { title: t('expire'), value: 'expire' },
   { title: t('activeLabel'), value: 'is_active' },
   { title: t('admin'), value: 'is_admin' },
   { title: t('actions'), value: 'actions', sortable: false },
@@ -78,7 +84,10 @@ const editedUser = ref({
   email: '',
   is_active: false,
   is_admin: false,
+  expire: null,
 })
+
+const { formatExpire } = useFormat()
 
 const editUser = (user) => {
   editedUser.value = { ...user }

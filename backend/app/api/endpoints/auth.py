@@ -32,6 +32,8 @@ def login_user(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Invalid credentials")
     if not auth.verify_totp(credentials.otp, user.totp_secret):
         raise HTTPException(status_code=401, detail="Invalid OTP code")
+    if user.expire is not None and user.expire <= datetime.now(timezone.utc):
+        raise HTTPException(status_code=403, detail="User account expired")
     return user  # OTP wird im nächsten Schritt geprüft
 
 
@@ -85,7 +87,8 @@ def create_invite(
 
     db_invite = AuthInvite(
         code=code,
-        use_max=invite.use_max
+        use_max=invite.use_max,
+        duration_month=invite.duration_month or 0,
     )
 
     db.add(db_invite)

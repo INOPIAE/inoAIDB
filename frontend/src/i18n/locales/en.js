@@ -125,4 +125,6 @@ export default {
   errorUnkown: 'Unknown error',
   similarManufacturersFound: 'Similar manufacturers found',
   similarApplicationsFound: 'Similar applications found',
+  noExpire: 'No date given',
+  expire: 'Expire date',
 }

@@ -6,6 +6,7 @@
       <p><strong>{{ t('name') }}:</strong> {{ user?.username }}</p>
       <p><strong>{{ t('email') }}:</strong> {{ user?.email }}</p>
       <p><strong>{{ t('active') }}:</strong> {{ user?.is_active ? t('yes') : t('no') }}</p>
+      <p><strong>{{ t('expire') }}:</strong> {{ formatExpire(user?.expire) }}</p>
 
       <v-divider class="my-4" />
 
@@ -23,6 +24,7 @@ import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import axios from 'axios'
 import { useI18n } from 'vue-i18n'
+import { useFormat } from '@/composables/useFormat'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
@@ -32,6 +34,8 @@ const form = ref({
   new_password: '',
   totp: '',
 })
+
+const { formatExpire } = useFormat()
 
 onMounted(async () => {
   const res = await axios.get(`/api/users/${authStore.user.id}`, {
