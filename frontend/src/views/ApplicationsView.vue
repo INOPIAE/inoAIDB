@@ -23,6 +23,7 @@
         />
       </v-col>
     </v-row>
+
     <v-row>
       <v-col cols="12" md="4" v-if="authStore.isAuthenticated">
         <v-btn color="primary" @click="saveChanges">{{ $t('saveSelection') }}</v-btn>
@@ -45,7 +46,11 @@
       item-value="id"
       class="elevation-1"
     >
-      <template v-slot:item.modelchoice_name="{ item }">
+      <template #item.description="{ item }">
+        <div v-html="sanitizedDescriptions.get(item.id)" />
+      </template>
+
+      <template #item.modelchoice_name="{ item }">
         {{ $t('mc_' + item.modelchoice_name) }}
       </template>
 
@@ -59,7 +64,7 @@
         />
       </template>
 
-      <template v-slot:item.risk_id="{ item }">
+      <template #item.risk_id="{ item }">
         <v-select
           v-model="item.risk_id"
           :items="risks"
@@ -71,11 +76,11 @@
         />
       </template>
 
-      <template v-slot:item.is_active="{ item }" v-if="authStore.isAuthenticated">
+      <template v-if="authStore.isAuthenticated" #item.is_active="{ item }">
         <span>{{ item.is_active ? $t('yes') : $t('no') }}</span>
       </template>
 
-      <template v-if="authStore.isAuthenticated" v-slot:item.actions="{ item }">
+      <template v-if="authStore.isAuthenticated" #item.actions="{ item }">
         <v-btn @click="openDialog(item)" size="small" color="primary">
           {{ $t('edit') }}
         </v-btn>
@@ -90,15 +95,15 @@
         <v-card-text>
           <v-text-field v-model="form.name" :label="$t('name')" @input="checkForSimilarNames" />
           <div v-if="similarApplications.length > 0" class="mt-2">
-          <v-alert type="warning" dense>
-            {{ t('similarApplicationsFound') }}:
-            <ul>
-              <li v-for="m in similarApplications" :key="m.id">
-                {{ m.name }}
-              </li>
-            </ul>
-          </v-alert>
-        </div>
+            <v-alert type="warning" dense>
+              {{ t('similarApplicationsFound') }}:
+              <ul>
+                <li v-for="m in similarApplications" :key="m.id">
+                  {{ m.name }}
+                </li>
+              </ul>
+            </v-alert>
+          </div>
           <v-textarea v-model="form.description" :label="$t('description')" />
           <v-select
             v-model="form.manufacturer_id"
@@ -138,6 +143,7 @@ import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
+import { useSanitizedHtml } from '@/composables/useSanitizedHtml'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
@@ -152,74 +158,8 @@ const risks = ref([])
 const dialog = ref(false)
 const selectedManufacturer = ref(null)
 const searchText = ref('')
-
-const loading = ref(false)
-const error = ref(null)
-
 const similarApplications = ref([])
-
-const checkForSimilarNames = async () => {
-  if (!form.value.name || form.value.name.length < 2) {
-    similarApplications.value = []
-    return
-  }
-  try {
-    const res = await axios.get('/api/applications/search', {
-      params: { q: form.value.name }
-    })
-    similarApplications.value = res.data.filter(
-      m => m.id !== form.value.id
-    )
-  } catch (err) {
-    console.error('Error similarity search', err)
-  }
-}
-
-
-const visibleHeaders = computed(() => {
-  let base = [
-    { title: t('name'), key: 'name' },
-    { title: t('description'), key: 'description' },
-    { title: t('manufacturer'), key: 'manufacturer_name' },
-    { title: t('languageModel'), key: 'languagemodel_name' },
-    { title: t('modelChoice'), key: 'modelchoice_name' },
-  ]
-  if (authStore.isAuthenticated) {
-    base.push({ title: t('selectedApp'), key: 'applicationuser_selected'})
-    base.push({ title: t('risk'), key: 'risk_id'})
-  }
-
-  if (authStore.isAuthenticated && authStore.user?.is_admin) {
-    base.push({ title: t('active'), key: 'is_active' })
-    base.push({ title: t('actions'), key: 'actions', sortable: false })
-  }
-
-  return base
-})
-
-const manufacturerFilterItems = computed(() => [
-  { id: null, name: t('all') },
-  ...manufacturers.value,
-])
-
-const filteredApplications = computed(() => {
-  let apps = applications.value
-
-  if (!authStore.isAuthenticated) {
-    apps = apps.filter(app => app.is_active)
-  }
-
-  if (selectedManufacturer.value) {
-    apps = apps.filter(app => app.manufacturer_id === selectedManufacturer.value)
-  }
-
-  if (searchText.value && searchText.value.trim().length > 0) {
-    const search = searchText.value.trim().toLowerCase()
-    apps = apps.filter(app => app.name.toLowerCase().includes(search))
-  }
-
-  return apps
-})
+const sanitizedDescriptions = new Map()
 
 const form = ref({
   id: null,
@@ -231,18 +171,69 @@ const form = ref({
   is_active: true,
 })
 
+const loading = ref(false)
+const error = ref(null)
+
+const visibleHeaders = computed(() => {
+  let base = [
+    { title: t('name'), key: 'name' },
+    { title: t('description'), key: 'description' },
+    { title: t('manufacturer'), key: 'manufacturer_name' },
+    { title: t('languageModel'), key: 'languagemodel_name' },
+    { title: t('modelChoice'), key: 'modelchoice_name' },
+  ]
+  if (authStore.isAuthenticated) {
+    base.push({ title: t('selectedApp'), key: 'applicationuser_selected' })
+    base.push({ title: t('risk'), key: 'risk_id' })
+  }
+  if (authStore.isAuthenticated && authStore.user?.is_admin) {
+    base.push({ title: t('active'), key: 'is_active' })
+    base.push({ title: t('actions'), key: 'actions', sortable: false })
+  }
+  return base
+})
+
+const manufacturerFilterItems = computed(() => [
+  { id: null, name: t('all') },
+  ...manufacturers.value,
+])
+
+const filteredApplications = computed(() => {
+  let apps = applications.value
+  if (!authStore.isAuthenticated) {
+    apps = apps.filter(app => app.is_active)
+  }
+  if (selectedManufacturer.value) {
+    apps = apps.filter(app => app.manufacturer_id === selectedManufacturer.value)
+  }
+  if (searchText.value && searchText.value.trim().length > 0) {
+    const search = searchText.value.trim().toLowerCase()
+    apps = apps.filter(app => app.name.toLowerCase().includes(search))
+  }
+  return apps
+})
+
 const loadApplications = async () => {
   loading.value = true
   error.value = null
   try {
-    const url = authStore.isAuthenticated ? '/api/applications/with-manufacturer-user' : '/api/applications/with-manufacturer'
+    const url = authStore.isAuthenticated
+      ? '/api/applications/with-manufacturer-user'
+      : '/api/applications/with-manufacturer'
     const config = authStore.isAuthenticated ? { headers: authStore.authHeader } : {}
     const res = await axios.get(url, config)
     applications.value = res.data.map(app => ({ ...app }))
     originalApplications.value = res.data.map(app => ({ ...app }))
+
+    sanitizedDescriptions.clear()
+    applications.value.forEach((item) => {
+      const textRef = ref(item.description)
+      const { sanitizedHtml } = useSanitizedHtml(textRef)
+      sanitizedDescriptions.set(item.id, sanitizedHtml.value)
+    })
   } catch (e) {
     console.error('Error loading applications:', e)
-    error.value = e.message || t('errorUnkown')
+    error.value = e.message || t('errorUnknown')
   } finally {
     loading.value = false
   }
@@ -256,7 +247,6 @@ const saveChanges = () => {
       app.risk_id !== original?.risk_id
     )
   })
-
   if (changed.length === 0) {
     alert(t('noChanges'))
     return
@@ -264,7 +254,11 @@ const saveChanges = () => {
   const config = { headers: authStore.authHeader }
   Promise.all(
     changed.map(app =>
-      axios.post('/api/applications/application_selection', { application_id: app.id, selected: app.applicationuser_selected, risk_id: app.risk_id }, config)
+      axios.post('/api/applications/application_selection', {
+        application_id: app.id,
+        selected: app.applicationuser_selected,
+        risk_id: app.risk_id,
+      }, config)
     )
   )
     .then(() => {
@@ -280,15 +274,12 @@ const saveChanges = () => {
 const downloadCSV = async () => {
   const config = {
     headers: authStore.authHeader,
-    responseType: 'blob'
+    responseType: 'blob',
   }
-
   try {
     const response = await axios.get('/api/applications/export/csv', config)
-
     const blob = new Blob([response.data], { type: 'text/csv' })
     const url = window.URL.createObjectURL(blob)
-
     const link = document.createElement('a')
     link.href = url
     link.setAttribute('download', 'applications.csv')
@@ -299,6 +290,21 @@ const downloadCSV = async () => {
   } catch (error) {
     console.error(t('errorCSVFailed'), error)
     alert(t('errorCSVFailed'))
+  }
+}
+
+const checkForSimilarNames = async () => {
+  if (!form.value.name || form.value.name.length < 2) {
+    similarApplications.value = []
+    return
+  }
+  try {
+    const res = await axios.get('/api/applications/search', {
+      params: { q: form.value.name }
+    })
+    similarApplications.value = res.data.filter(m => m.id !== form.value.id)
+  } catch (err) {
+    console.error('Error similarity search', err)
   }
 }
 
@@ -329,47 +335,37 @@ const loadModelChoices = async () => {
   }
 }
 
-function translateModelChoice(item) {
-  return t(`mc_${item.name}`) || item.name
-}
-
-function translateManufacturer(item) {
-  return t(`${item.name}`) || item.name
-}
-
-function translateRisk(item) {
-  return t(`r_${item.name}`) || item.name
-}
-const openDialog = (item = null) => {
-  if (item) {
-    form.value = { ...item }
-  } else {
-    form.value = {
-      id: null,
-      name: '',
-      description: '',
-      manufacturer_id: null,
-      languagemodel_id: null,
-      modelchoice_id: null,
-      is_active: true,
-    }
-  }
-  dialog.value = true
-}
-
-const closeDialog = () => {
-  dialog.value = false
-}
-
 const loadRisks = async () => {
-  if (!authStore.isAuthenticated) return // nur für angemeldete Nutzer
-
+  if (!authStore.isAuthenticated) return
   try {
     const res = await axios.get('/api/applications/risk')
     risks.value = res.data
   } catch (e) {
     console.error('Error loading risks:', e)
   }
+}
+
+const translateModelChoice = (item) => t(`mc_${item.name}`) || item.name
+const translateManufacturer = (item) => t(item.name) || item.name
+const translateRisk = (item) => t(`r_${item.name}`) || item.name
+
+const openDialog = (item = null) => {
+  form.value = item
+    ? { ...item }
+    : {
+        id: null,
+        name: '',
+        description: '',
+        manufacturer_id: null,
+        languagemodel_id: null,
+        modelchoice_id: null,
+        is_active: true,
+      }
+  dialog.value = true
+}
+
+const closeDialog = () => {
+  dialog.value = false
 }
 
 const submit = async () => {
