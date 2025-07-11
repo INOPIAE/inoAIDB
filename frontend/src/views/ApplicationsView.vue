@@ -1,37 +1,16 @@
 <template>
   <v-container>
     <v-row class="justify-space-between align-center mb-4">
-      <v-col cols="12" md="4">
+      <v-col cols="12" md="6">
         <h2>{{ $t('applications') }}</h2>
       </v-col>
-      <v-col cols="12" md="4">
-        <v-select
-          v-model="selectedManufacturer"
-          :items="manufacturerFilterItems"
-          item-title="name"
-          item-value="id"
-          :label="$t('filterManufacturer')"
-          clearable
-        />
-      </v-col>
-      <v-col cols="12" md="4">
-        <v-text-field
-          v-model="searchText"
-          :label="$t('searchApplications')"
-          clearable
-          dense
-        />
-      </v-col>
-    </v-row>
-
-    <v-row>
-      <v-col cols="12" md="4" v-if="authStore.isAuthenticated">
+      <v-col cols="12" md="2" v-if="authStore.isAuthenticated">
         <v-btn color="primary" @click="saveChanges">{{ $t('saveSelection') }}</v-btn>
       </v-col>
-      <v-col cols="12" md="4" v-if="authStore.isAuthenticated">
+      <v-col cols="12" md="2" v-if="authStore.isAuthenticated">
         <v-btn color="primary" @click="downloadCSV">{{ $t('exportCSV') }}</v-btn>
       </v-col>
-      <v-col cols="12" md="4" class="text-right" v-if="authStore.user?.is_admin">
+      <v-col cols="12" md="2" class="text-right" v-if="authStore.user?.is_admin">
         <v-btn color="secondary" @click="openDialog()">{{ $t('new') }}</v-btn>
       </v-col>
     </v-row>
@@ -46,6 +25,111 @@
       item-value="id"
       class="elevation-1"
     >
+      <template v-slot:header.name>
+        <div>
+          {{ t('name') }}
+          <v-text-field
+            v-model="filterName"
+            dense
+            hide-details
+            placeholder="Filter"
+            clearable
+          />
+        </div>
+      </template>
+
+      <template v-slot:header.manufacturer_name>
+        <div>
+          {{ t('manufacturer') }}
+          <v-select
+            v-model="filterManufacturer"
+            :items="manufacturers"
+            item-title="name"
+            item-value="id"
+            dense
+            clearable
+            hide-details
+            placeholder="Filter"
+          />
+        </div>
+      </template>
+
+      <template v-slot:header.languagemodel_name>
+        <div>
+          {{ t('languageModel') }}
+          <v-select
+            v-model="filterLanguageModel"
+            :items="languageModels"
+            item-title="name"
+            item-value="id"
+            dense
+            clearable
+            hide-details
+            placeholder="Filter"
+          />
+        </div>
+      </template>
+      <template v-slot:header.modelchoice_name>
+        <div>
+          {{ t('modelChoice') }}
+          <v-select
+            v-model="filterModelChoice"
+            :items="modelChoices"
+            item-title="name"
+            item-value="id"
+            dense
+            clearable
+            hide-details
+            placeholder="Filter"
+          />
+        </div>
+      </template>
+      <template v-slot:header.applicationuser_selected>
+        <div>
+          {{ t('selectedApp') }}
+          <v-select
+            v-model="filterSelectedApp"
+            :items="[{ id: null, name: t('all') }, { id: true, name: t('yes') }, { id: false, name: t('no') }]"
+            item-title="name"
+            item-value="id"
+            dense
+            clearable
+            hide-details
+            placeholder="Filter"
+          />
+        </div>
+      </template>
+      <template v-slot:header.risk_id>
+        <div>
+          {{ t('risk') }}
+          <v-select
+            v-model="filterRisk"
+            :items="risks"
+            :item-title="translateRisk"
+            item-value="id"
+            dense
+            clearable
+            hide-details
+            placeholder="Filter"
+          />
+        </div>
+      </template>
+      <template v-if="authStore.isAuthenticated" v-slot:header.is_active>
+        <div>
+          {{ t('active') }}
+          <v-select
+            v-model="filterActive"
+            :items="[{ id: null, name: t('all') }, { id: true, name: t('yes') }, { id: false, name: t('no') }]"
+            item-title="name"
+            item-value="id"
+            dense
+            clearable
+            hide-details
+            placeholder="Filter"
+          />
+        </div>
+      </template>
+
       <template #item.description="{ item }">
         <div v-html="sanitizedDescriptions.get(item.id)" />
       </template>
@@ -156,10 +240,17 @@ const modelChoices = ref([])
 const risks = ref([])
 
 const dialog = ref(false)
-const selectedManufacturer = ref(null)
-const searchText = ref('')
 const similarApplications = ref([])
 const sanitizedDescriptions = new Map()
+
+const filterName = ref('')
+const filterManufacturer = ref(null)
+const filterLanguageModel = ref(null)
+const filterModelChoice = ref(null)
+const filterSelectedApp = ref(null)
+const filterRisk = ref(null)
+const filterActive = ref(null)
+
 
 const form = ref({
   id: null,
@@ -193,23 +284,41 @@ const visibleHeaders = computed(() => {
   return base
 })
 
-const manufacturerFilterItems = computed(() => [
-  { id: null, name: t('all') },
-  ...manufacturers.value,
-])
-
 const filteredApplications = computed(() => {
   let apps = applications.value
   if (!authStore.isAuthenticated) {
     apps = apps.filter(app => app.is_active)
   }
-  if (selectedManufacturer.value) {
-    apps = apps.filter(app => app.manufacturer_id === selectedManufacturer.value)
-  }
-  if (searchText.value && searchText.value.trim().length > 0) {
-    const search = searchText.value.trim().toLowerCase()
+
+  if (filterName.value && filterName.value.trim() !== '') {
+    const search = filterName.value.trim().toLowerCase()
     apps = apps.filter(app => app.name.toLowerCase().includes(search))
   }
+
+  if (filterManufacturer.value) {
+    apps = apps.filter(app => app.manufacturer_id === filterManufacturer.value)
+  }
+
+  if (filterLanguageModel.value) {
+    apps = apps.filter(app => app.languagemodel_id === filterLanguageModel.value)
+  }
+
+  if (filterModelChoice.value) {
+    apps = apps.filter(app => app.modelchoice_id === filterModelChoice.value)
+  }
+
+  if (filterSelectedApp.value !== null) {
+    apps = apps.filter(app => app.applicationuser_selected === filterSelectedApp.value)
+  }
+
+  if (filterRisk.value) {
+    apps = apps.filter(app => app.risk_id === filterRisk.value)
+  }
+
+  if (filterActive.value !== null) {
+    apps = apps.filter(app => app.is_active === filterActive.value)
+  }
+
   return apps
 })
 
