@@ -21,6 +21,7 @@ const routes = [
       window.location.href = window.location.pathname
     },
   },
+  { path: '/', component: HomeView },
   { path: '/home', component: HomeView },
   { path: '/manufacturers', component: ManufacturersView },
   { path: '/applications', component: ApplicationsView },
