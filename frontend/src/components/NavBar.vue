@@ -65,12 +65,6 @@ export default {
                 condition: null,
             },
             {
-                title: 'manufacturer',
-                icon: `mdi-warehouse`,
-                href: '/manufacturers',
-                condition: null,
-            },
-            {
                 style: 'divider',
             },
             {
@@ -122,6 +116,13 @@ export default {
                 title: 'userAdministration',
                 icon: `mdi-account-supervisor`,
                 href: '/adminusers',
+                condition: () => authStore.isAuthenticated && authStore.user?.is_admin,
+                level: 1,
+            },
+                        {
+                title: 'manufacturer',
+                icon: `mdi-warehouse`,
+                href: '/manufacturers',
                 condition: () => authStore.isAuthenticated && authStore.user?.is_admin,
                 level: 1,
             },
