@@ -4,6 +4,8 @@ port_backend = 8000
 port_frontend = 5173
 log_level = debug
 public_ip = 0.0.0.0
+public_url = localhost
+nginx = false
 
 [db]
 db_host=localhost
