@@ -10,6 +10,8 @@ import InviteView from '@/views/InviteView.vue'
 import LanguageModelView from '@/views/LanguageModelView.vue'
 import ResetPasswordView from '@/views/ResetPasswordView.vue'
 import GeneralView from '@/views/GeneralView.vue'
+import PaymentAdminView from '@/views/PaymentAdminView.vue'
+import PaymentUseView from '@/views/PaymentUseView.vue'
 
 import { useAuthStore } from '@/stores/auth'
 import { storeToRefs } from 'pinia'
@@ -27,12 +29,14 @@ const routes = [
   { path: '/applications', component: ApplicationsView },
   { path: '/login', component: LoginView },
   { path: '/adminusers', component: AdminUsersView, meta: { requiresAuth: true } },
+  { path: '/payments', component: PaymentAdminView, meta: { requiresAuth: true } },
   { path: '/userprofile', component: UserProfileView, meta: { requiresAuth: true } },
   { path: '/register', component: RegisterView },
   { path: '/invite', component: InviteView, meta: { requiresAuth: true } },
   { path: '/languagemodel', component: LanguageModelView, meta: { requiresAuth: true } },
   { path: '/reset-password', component: ResetPasswordView },
   { path: '/general/:page(about|dataprotection|imprint)', name: 'about', component: GeneralView, },
+  { path: '/payment', name: 'PaymentUse', component: () => import('@/views/PaymentUseView.vue'),},
 ]
 
 const router = createRouter({

@@ -119,7 +119,14 @@ export default {
                 condition: () => authStore.isAuthenticated && authStore.user?.is_admin,
                 level: 1,
             },
-                        {
+            {
+                title: 'payments',
+                icon: `mdi-account-supervisor`,
+                href: '/payments',
+                condition: () => authStore.isAuthenticated && authStore.user?.is_admin,
+                level: 1,
+            },
+            {
                 title: 'manufacturer',
                 icon: `mdi-warehouse`,
                 href: '/manufacturers',
