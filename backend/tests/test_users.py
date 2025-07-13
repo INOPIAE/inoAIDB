@@ -1,6 +1,8 @@
 from datetime import datetime, timezone, UTC
 from dateutil.relativedelta import relativedelta
-from app.models import Application, AuthInvite, Manufacturer, User
+from app import auth
+from app.models import Application, AuthInvite, Manufacturer, PaymentToken, User
+from app.utils.token import generate_unique_token
 
 def new_user(authenticated_client):
     response = authenticated_client.post("api/users/", json={
@@ -343,3 +345,167 @@ def test_register_missing_Accept(client):
     data = response.json()
     assert response.status_code == 400
     assert data["detail"] == "Missing accepted terms"
+
+def test_list_payments(authenticated_client_for_email, db):
+    email="admin@example.com"
+    authenticated_client = authenticated_client_for_email(email)
+
+    token = generate_unique_token(db, PaymentToken)
+    db_token = PaymentToken(token=token, duration=5)
+    db.add(db_token)
+    token1 = generate_unique_token(db, PaymentToken)
+    db_token=  PaymentToken(token=token1, duration=5, used_at=datetime.now(timezone.utc)) 
+    db.add(db_token)
+    db.commit()
+
+    response = authenticated_client.get("/api/users/payments")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert any(t["token"] == token for t in data)
+    tokens = [t["token"] for t in data]
+    assert token1 not in tokens
+
+def test_list_payments_no_admin(authenticated_client_for_email):
+    email="user@example.com"
+    authenticated_client = authenticated_client_for_email(email)
+
+    response = authenticated_client.get("/api/users/payments")
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Not authorized to access this function"
+
+def test_list_payments_no_user(client):
+    response = client.get("/api/users/payments")
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"
+
+def test_create_payments(authenticated_client_for_email, db):
+    email="admin@example.com"
+    authenticated_client = authenticated_client_for_email(email)
+
+    payload = {
+        "duration": 6,
+    }
+
+    response = authenticated_client.post("/api/users/payments", json=payload)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert "token" in data
+    assert data["duration"] == 6
+ 
+
+def test_create_payments_no_admin(authenticated_client_for_email):
+    email="user@example.com"
+    authenticated_client = authenticated_client_for_email(email)
+
+    payload = {
+        "duration": 6,
+    }
+
+    response = authenticated_client.post("/api/users/payments", json=payload)
+
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Not authorized to access this function"
+
+def test_create_payments_no_user(client):
+    payload = {
+        "duration": 6,
+    }
+
+    response = client.post("/api/users/payments", json=payload)
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"
+
+def test_update_payments(client, db):
+    email="user@example.com"
+
+    currentTime = datetime.now(timezone.utc)
+    month = 5
+
+    user = db.query(User).filter(User.email == email).first()
+    user.expire = currentTime
+    db.commit()
+
+    otp = auth.get_current_totp(user.totp_secret)
+
+    token = generate_unique_token(db, PaymentToken)
+    db_token = PaymentToken(token=token, duration=month)
+    db.add(db_token)
+    db.commit()
+
+    payload = {
+        "email": email,
+        "token": token,
+        "otp": otp,
+    }
+
+    response = client.put("/api/users/payments", json=payload)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] == True
+    expected = datetime.now(UTC) + relativedelta(months=month)
+    actual = datetime.fromisoformat(data["new_expiry"])
+    assert actual.strftime("%Y-%m-%d") == expected.strftime("%Y-%m-%d")
+
+    user = db.query(User).filter(User.email == email).first()
+    expected = datetime.now(UTC) + relativedelta(months=month)
+    assert user.expire.strftime("%Y-%m-%d") == expected.strftime("%Y-%m-%d")
+
+    response = client.put("/api/users/payments", json=payload)
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Payment token already used"
+
+
+def test_update_payments_wrong_data(client, db):
+    email="user@example.com"
+
+    currentTime = datetime.now(timezone.utc)
+    month = 5
+
+    user = db.query(User).filter(User.email == email).first()
+    user.expire = currentTime
+    db.commit()
+
+    otp = auth.get_current_totp(user.totp_secret)
+
+    token = generate_unique_token(db, PaymentToken)
+    db_token = PaymentToken(token=token, duration=month)
+    db.add(db_token)
+    db.commit()
+
+    payload = {
+        "email": email,
+        "token": "xyz",
+        "otp": otp,
+    }
+
+    response = client.put("/api/users/payments", json=payload)
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Payment token not found"
+
+    payload = {
+        "email": email,
+        "token": token,
+        "otp": "123456",
+    }
+
+    response = client.put("/api/users/payments", json=payload)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "User not found or invalid OTP code"
+
+    payload = {
+        "email": "update@example.com",
+        "token": token,
+        "otp": "123456",
+    }
+
+    response = client.put("/api/users/payments", json=payload)
+    assert response.status_code == 404
+    assert response.json()["detail"] == "User not found or invalid OTP code"

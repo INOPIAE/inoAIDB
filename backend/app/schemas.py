@@ -238,3 +238,33 @@ class ModelChoiceOut(ModelChoiceBase):
     model_config = {
         "from_attributes": True
     }
+
+
+# Payment Token
+class PaymentTokenBase(BaseModel):
+    id: int
+    user_id: Optional[int] = None
+    token: str
+
+class PaymentTokenOut(BaseModel):
+    id: int
+    token: str
+    duration: int
+    used_at: Optional[datetime] = None
+    user_id: Optional[int] = None
+
+    model_config = {
+        "from_attributes": True
+    }
+
+class PaymentTokenCreate(BaseModel):
+    duration: int
+
+class PaymentTokenCreateOut(BaseModel):
+    token: str
+    duration: int
+
+class PaymentUsage(BaseModel):
+    email: EmailStr
+    token: str
+    otp: str

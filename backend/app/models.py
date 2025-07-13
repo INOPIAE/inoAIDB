@@ -129,3 +129,13 @@ class Risk(Base):
     sort = Column(Integer, nullable=True)
 
     application_users = relationship("ApplicationUser")
+
+class PaymentToken(Base):
+    __tablename__ = "payment_tokens"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    token = Column(String, unique=True, nullable=False)
+    duration = Column(Integer, default=0)
+    used_at = Column(DateTime, nullable=True)
+
+    user = relationship("User")
