@@ -133,8 +133,21 @@ def forgot_password(email: schemas.ForgotPasswordRequest, db: Session = Depends(
     db.add(db_token)
     db.commit()
 
-    reset_url = f"https://{settings.public_ip}:{settings.port_frontend}/reset-password?token={token}"
-    send_email(to=email.email, subject="Password Reset for inoAIDB", body=f"Click here: {reset_url}")
+
+    if settings.nginx_enabled:
+        reset_url = f"https://{settings.public_url}/reset-password?token={token}"
+    else:
+        reset_url = f"http://{settings.public_url}:{settings.port_frontend}/reset-password?token={token}"
+
+    linebreak = "\n"
+    body = (
+        "Hi," + linebreak +
+        "You requested to reset your password. Click the link below to reset it:" + linebreak + linebreak +
+        reset_url + linebreak + linebreak +
+        "Your Support Team"
+    )
+
+    send_email(to=email.email, subject="Password Reset for inoAIDB", body=body)
 
     return {"message": "If the email exists, a reset link has been sent."}
 

@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 from app import models
+import app.config as config_module
 from app.models import PasswordResetToken, User
 from datetime import datetime, timedelta, UTC, timezone
 import secrets
@@ -326,4 +327,20 @@ def test_reset_password_token_expired(client, db):
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Invalid or expired token"
+
+@patch("app.api.endpoints.auth.send_email")
+def test_reset_password_with_nginx(mock_send_email, monkeypatch, client):
+    domain = "domain.tld"
+    monkeypatch.setattr(config_module.settings, "nginx_enabled", True)
+    monkeypatch.setattr(config_module.settings, "public_url", domain)
+
+    response = client.post("/api/auth/forgot-password", json={"email": "user@example.com"})
+
+    assert response.status_code == 200
+    assert "message" in response.json()
+
+    mock_send_email.assert_called_once()
+    args, kwargs = mock_send_email.call_args
+    assert kwargs["to"] == "user@example.com"
+    assert f"https://{domain}/reset-password?token=" in kwargs["body"]
 

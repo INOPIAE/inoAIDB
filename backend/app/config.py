@@ -40,6 +40,8 @@ class Settings:
         self.port_frontend = server_section["port_frontend"]
         self.log_level = server_section["log_level"]
         self.public_ip = server_section["public_ip"]
+        self.public_url = server_section["public_url"]
+        self.nginx_enabled = server_section.getboolean("nginx")
 
         application_section = parser["application"]
         self.poweredby = application_section["poweredby"]
