@@ -1,0 +1,1 @@
+The “inoAIDB” logo was created using the DALL·E artificial intelligence by OpenAI. It is not subject to exclusive copyright and may be used freely in accordance with the [OpenAI Terms of Use]( https://openai.com/policies/terms-of-use) No third-party claims apply.
