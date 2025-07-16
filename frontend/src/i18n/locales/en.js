@@ -141,5 +141,6 @@ export default {
   id: "ID",
   user_id: "User ID",
   paymentUsed_at: "Used At",
-  close: "Close"
+  close: "Close",
+  payments: "Payment Tokens",
 }
