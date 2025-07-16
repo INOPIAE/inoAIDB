@@ -142,4 +142,5 @@ export default {
   user_id: "Benutzer-ID",
   paymentUsed_at: "Eingelöst am",
   close: "Schließen",
+  payments: "Zahlungstoken",
 }
