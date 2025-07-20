@@ -7,7 +7,7 @@
       <v-text-field
         v-model="newInvite.code"
         :label="t('code')"
-        placeholder="$t('optional')"
+        :placeholder="t('optional')"
       />
       <v-text-field
         v-model.number="newInvite.use_max"
@@ -17,7 +17,7 @@
       />
             <v-text-field
         v-model.number="newInvite.duration_month"
-        :label="t('Duration (month)')"
+        :label="t('DurationMonth')"
         type="number"
         min="1"
       />
@@ -62,7 +62,7 @@ const checkedUsesLeft = ref(null)
 const headers = [
   { title: t('code'), value: 'code' },
   { title: t('usesLeft'), value: 'use_left' },
-  { title: t('Duration (month)'), value: 'duration_month' },
+  { title: t('DurationMonth'), value: 'duration_month' },
 ]
 
 const fetchInvites = async () => {
