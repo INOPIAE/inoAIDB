@@ -44,7 +44,7 @@
           <v-select
             v-model="filterManufacturer"
             :items="manufacturers"
-            item-title="name"
+            :item-title="translateManufacturer"
             item-value="id"
             dense
             clearable
@@ -60,7 +60,7 @@
           <v-select
             v-model="filterLanguageModel"
             :items="languageModels"
-            item-title="name"
+            :item-title="translateLanguageModel"
             item-value="id"
             dense
             clearable
@@ -75,7 +75,7 @@
           <v-select
             v-model="filterModelChoice"
             :items="modelChoices"
-            item-title="name"
+            :item-title="translateModelChoice"
             item-value="id"
             dense
             clearable
@@ -152,13 +152,29 @@
         <div v-html="sanitizedDescriptions.get(item.id)" />
       </template>
 
+      <template #item.manufacturer_name="{ item }">
+        {{ $t(item.manufacturer_name) }}
+      </template>
+
+      <template #item.languagemodel_name="{ item }">
+        {{ $t(item.languagemodel_name) }}
+      </template>
+
       <template #item.modelchoice_name="{ item }">
         {{ $t('mc_' + item.modelchoice_name) }}
       </template>
 
       <template #item.area_ids="{ item }">
         <span v-if="item.areas && item.areas.length">
-          {{ item.areas.map(a => a.area).join(', ') }}
+          {{ item.areas
+            .map(a => {
+              const key = 'a_' + (a?.area ?? '')
+              const translation = $t(key)
+
+              return translation === key ? a.area : translation
+            })
+            .join(', ')
+          }}
         </span>
         <span v-else>
           {{ $t('none') }}
@@ -274,8 +290,8 @@ const originalApplications = ref([])
 const manufacturers = ref([])
 const languageModels = ref([])
 const modelChoices = ref([])
-const risks = ref([])
 const areas = ref([])
+const risks = ref([])
 
 const dialog = ref(false)
 const similarApplications = ref([])
@@ -285,11 +301,10 @@ const filterName = ref('')
 const filterManufacturer = ref(null)
 const filterLanguageModel = ref(null)
 const filterModelChoice = ref(null)
+const filterArea = ref([])
 const filterSelectedApp = ref(null)
 const filterRisk = ref(null)
 const filterActive = ref(null)
-const filterArea = ref([])
-
 
 const form = ref({
   id: null,
@@ -348,6 +363,12 @@ const filteredApplications = computed(() => {
     apps = apps.filter(app => app.modelchoice_id === filterModelChoice.value)
   }
 
+  if (filterArea.value && filterArea.value.length > 0) {
+    apps = apps.filter(app =>
+      app.areas?.some(area => filterArea.value.includes(area.id))
+    )
+  }
+
   if (filterSelectedApp.value !== null) {
     apps = apps.filter(app => app.applicationuser_selected === filterSelectedApp.value)
   }
@@ -358,12 +379,6 @@ const filteredApplications = computed(() => {
 
   if (filterActive.value !== null) {
     apps = apps.filter(app => app.is_active === filterActive.value)
-  }
-
-  if (filterArea.value && filterArea.value.length > 0) {
-    apps = apps.filter(app =>
-      app.areas?.some(area => filterArea.value.includes(area.id))
-    )
   }
 
   return apps
@@ -491,6 +506,15 @@ const loadModelChoices = async () => {
   }
 }
 
+const loadAreas = async () => {
+  try {
+    const res = await axios.get('/api/applications/areas/')
+    areas.value = res.data
+  } catch (e) {
+    console.error('Error loading areas:', e)
+  }
+}
+
 const loadRisks = async () => {
   if (!authStore.isAuthenticated) return
   try {
@@ -501,17 +525,9 @@ const loadRisks = async () => {
   }
 }
 
-const loadAreas = async () => {
-  try {
-    const res = await axios.get('/api/applications/areas/')
-    areas.value = res.data
-  } catch (e) {
-    console.error('Error loading areas:', e)
-  }
-}
-
 const translateModelChoice = (item) => t(`mc_${item.name}`) || item.name
 const translateManufacturer = (item) => t(item.name) || item.name
+const translateLanguageModel = (item) => t(item.name) || item.name
 const translateRisk = (item) => t(`r_${item.name}`) || item.name
 
 const openDialog = (item = null) => {
