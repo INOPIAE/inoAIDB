@@ -141,6 +141,14 @@ class ManufacturerOut(ManufacturerBase):
         "from_attributes": True
     }
 
+# Application area
+class ApplicationAreaBase(BaseModel):
+    id: int
+    area: str
+
+    model_config = {
+        "from_attributes": True
+    }
 
 #Application
 class ApplicationBase(BaseModel):
@@ -149,7 +157,9 @@ class ApplicationBase(BaseModel):
     manufacturer_id: int
     languagemodel_id: int
     modelchoice_id : int
+    area_ids: List[int]
     is_active: bool = True
+    area_ids: Optional[List[int]] = []
 
 class CreateApplication(ApplicationBase):
     pass
@@ -158,6 +168,7 @@ class ApplicationOut(ApplicationBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    areas: List[ApplicationAreaBase] = []
 
     model_config = {
         "from_attributes": True
@@ -178,6 +189,7 @@ class ApplicationWithManufacturerOut(BaseModel):
     applicationuser_selected: bool
     risk_id: Optional[int] = None
     risk_name: Optional[str] = None
+    areas: List[ApplicationAreaBase]
 
     model_config = {
         "from_attributes": True

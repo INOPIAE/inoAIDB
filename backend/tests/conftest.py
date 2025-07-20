@@ -10,7 +10,7 @@ from app import auth, models
 from app.config import get_settings
 from app.database import Base, get_db
 from app.main import app
-from app.models import Application, AuthInvite, Manufacturer, PaymentToken, User, LanguageModel, ModelChoice, PasswordResetToken, ApplicationUser, Risk
+from app.models import Application, AuthInvite, Manufacturer, PaymentToken, User, LanguageModel, ModelChoice, PasswordResetToken, ApplicationUser, Risk, application_area_entry_table, ApplicationArea
 
 
 @pytest.fixture(scope="session")
@@ -65,6 +65,7 @@ def setup_test_data(db):
     db.query(PasswordResetToken).delete()
     db.query(ApplicationUser).delete()
     db.query(User).delete()
+    db.query(application_area_entry_table).delete()
 
 
     db.query(Application).delete()
@@ -121,9 +122,29 @@ def setup_test_data(db):
     au1 = ApplicationUser(user_id=1, application_id=1, selected=True, risk_id=1)
     au2 = ApplicationUser(user_id=2, application_id=2, selected=True, risk_id=1)
 
+    areas_to_create = [
+        {"id": 1, "area": "Text"},
+        {"id": 2, "area": "Video"},
+        {"id": 3, "area": "Image"},
+    ]
+
+    for data in areas_to_create:
+        existing_area = db.query(ApplicationArea).filter(ApplicationArea.id == data["id"]).first()
+        if not existing_area:
+            area = ApplicationArea(**data)
+            db.add(area)
+            db.commit()
+            print(f"Area with id={data['id']} created.")
 
     db.add_all([user1, user2, user3, user4, man1, man2, lm1, lm2, mc1, mc2, app1, app2, app3, inv1, inv2, inv3, au1, au2])
     db.commit()
+
+    db.execute(application_area_entry_table.insert().values([
+        {"application_id": 1, "area_id": 1},
+        {"application_id": 1, "area_id": 3},
+    ]))
+    db.commit()
+
     yield
     db.close()
 

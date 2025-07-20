@@ -143,4 +143,6 @@ export default {
   paymentUsed_at: "Eingelöst am",
   close: "Schließen",
   payments: "Zahlungstoken",
+  areas: "Bereich",
+  none: "keine",
 }

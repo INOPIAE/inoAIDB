@@ -143,4 +143,6 @@ export default {
   paymentUsed_at: "Used At",
   close: "Close",
   payments: "Payment Tokens",
+  areas: "Area",
+  none: "none",
 }
