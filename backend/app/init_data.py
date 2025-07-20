@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.models import AuthInvite, ModelChoice, Risk
+from app.models import AuthInvite, ModelChoice, Risk, ApplicationArea
 
 def ensure_default_invite_exists(db: Session):
     existing = db.query(AuthInvite).first()
@@ -61,3 +61,28 @@ def ensure_default_invite_exists(db: Session):
             else:
                 print(f"Risk already exists: {name} (sort={sort})")
 
+    required_areas = {
+        "Text Generation",
+        "Translation and Transcription",
+        "Image Generation and Manipulation",
+        "Design, Marketing, Content Creation, SEO",
+        "Audio and Music Processing, Transcription",
+        "Audio and Music Generation",
+        "Videos",
+        "Programming and Code Generation",
+        "Learning and Teaching",
+        "Mathematics",
+        "Productivity applications",
+    }
+
+    existing_areas = {
+        a.area: a for a in db.query(ApplicationArea).filter(ApplicationArea.area.in_(required_areas)).all()
+    }
+
+    for area in required_areas:
+        if area not in existing_areas:
+            db.add(ApplicationArea(area=area))
+            db.commit()
+            print(f"Area created: {area} ")
+        else:
+            print(f"Area already exists: {area} ")

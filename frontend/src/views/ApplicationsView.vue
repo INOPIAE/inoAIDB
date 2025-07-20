@@ -84,6 +84,24 @@
           />
         </div>
       </template>
+      <template v-slot:header.area_ids>
+        <div>
+          {{ t('areas') }}
+          <v-select
+            v-model="filterArea"
+            :items="areas"
+            item-title="area"
+            item-value="id"
+            dense
+            clearable
+            hide-details
+            placeholder="Filter"
+            multiple
+            chips
+          />
+        </div>
+      </template>
+
       <template v-slot:header.applicationuser_selected>
         <div>
           {{ t('selectedApp') }}
@@ -136,6 +154,15 @@
 
       <template #item.modelchoice_name="{ item }">
         {{ $t('mc_' + item.modelchoice_name) }}
+      </template>
+
+      <template #item.area_ids="{ item }">
+        <span v-if="item.areas && item.areas.length">
+          {{ item.areas.map(a => a.area).join(', ') }}
+        </span>
+        <span v-else>
+          {{ $t('none') }}
+        </span>
       </template>
 
       <template #item.applicationuser_selected="{ item }">
@@ -210,6 +237,16 @@
             item-value="id"
             :label="$t('modelChoice')"
           />
+          <v-select
+            v-model="form.area_ids"
+            :items="areas"
+            item-title="area"
+            item-value="id"
+            :label="$t('areas')"
+            multiple
+            chips
+            clearable
+          />
           <v-switch v-model="form.is_active" :label="$t('activeQuestion')" />
         </v-card-text>
         <v-card-actions>
@@ -238,6 +275,7 @@ const manufacturers = ref([])
 const languageModels = ref([])
 const modelChoices = ref([])
 const risks = ref([])
+const areas = ref([])
 
 const dialog = ref(false)
 const similarApplications = ref([])
@@ -250,6 +288,7 @@ const filterModelChoice = ref(null)
 const filterSelectedApp = ref(null)
 const filterRisk = ref(null)
 const filterActive = ref(null)
+const filterArea = ref([])
 
 
 const form = ref({
@@ -260,6 +299,7 @@ const form = ref({
   languagemodel_id: null,
   modelchoice_id: null,
   is_active: true,
+  area_ids: [],
 })
 
 const loading = ref(false)
@@ -272,6 +312,7 @@ const visibleHeaders = computed(() => {
     { title: t('manufacturer'), key: 'manufacturer_name' },
     { title: t('languageModel'), key: 'languagemodel_name' },
     { title: t('modelChoice'), key: 'modelchoice_name' },
+    { title: t('areas'), value: 'area_ids' },
   ]
   if (authStore.isAuthenticated) {
     base.push({ title: t('selectedApp'), key: 'applicationuser_selected' })
@@ -317,6 +358,12 @@ const filteredApplications = computed(() => {
 
   if (filterActive.value !== null) {
     apps = apps.filter(app => app.is_active === filterActive.value)
+  }
+
+  if (filterArea.value && filterArea.value.length > 0) {
+    apps = apps.filter(app =>
+      app.areas?.some(area => filterArea.value.includes(area.id))
+    )
   }
 
   return apps
@@ -454,13 +501,25 @@ const loadRisks = async () => {
   }
 }
 
+const loadAreas = async () => {
+  try {
+    const res = await axios.get('/api/applications/areas/')
+    areas.value = res.data
+  } catch (e) {
+    console.error('Error loading areas:', e)
+  }
+}
+
 const translateModelChoice = (item) => t(`mc_${item.name}`) || item.name
 const translateManufacturer = (item) => t(item.name) || item.name
 const translateRisk = (item) => t(`r_${item.name}`) || item.name
 
 const openDialog = (item = null) => {
   form.value = item
-    ? { ...item }
+    ? {
+        ...item,
+        area_ids: item.areas?.map(area => area.id) || [],
+      }
     : {
         id: null,
         name: '',
@@ -469,9 +528,11 @@ const openDialog = (item = null) => {
         languagemodel_id: null,
         modelchoice_id: null,
         is_active: true,
+        area_ids: [],
       }
   dialog.value = true
 }
+
 
 const closeDialog = () => {
   dialog.value = false
@@ -480,8 +541,10 @@ const closeDialog = () => {
 const submit = async () => {
   try {
     const config = { headers: authStore.authHeader }
+    form.value.manufacturer_id = Number(form.value.manufacturer_id)
     form.value.languagemodel_id = Number(form.value.languagemodel_id)
     form.value.modelchoice_id = Number(form.value.modelchoice_id)
+    form.value.area_ids = form.value.area_ids.map(Number)
     if (form.value.id) {
       await axios.put(`/api/applications/${form.value.id}`, form.value, config)
     } else {
@@ -494,11 +557,17 @@ const submit = async () => {
   }
 }
 
+
+console.log(applications.value)
+console.log(areas.value)
+
 onMounted(() => {
   loadApplications()
   loadManufacturers()
   loadLanguageModels()
   loadModelChoices()
   loadRisks()
+  loadAreas()
 })
+
 </script>

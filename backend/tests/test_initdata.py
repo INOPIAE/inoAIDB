@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.models import Base, AuthInvite, ModelChoice, Risk
+from app.models import Base, AuthInvite, ModelChoice, Risk, ApplicationArea
 from app.init_data import ensure_default_invite_exists
 
 # Testdatenbank (in-memory SQLite)
@@ -43,6 +43,21 @@ def test_ensure_default_invite_creates_records(test_db):
     assert "medium" in names
     assert "high" in names
     assert "deferred" in names
+
+    area = test_db.query(ApplicationArea).all()
+    assert len(area) == 11
+    areas = [ak.area for ak in area]
+    assert "Text Generation" in areas
+    assert "Translation and Transcription" in areas
+    assert "Image Generation and Manipulation" in areas
+    assert "Design, Marketing, Content Creation, SEO" in areas
+    assert "Audio and Music Processing, Transcription" in areas
+    assert "Audio and Music Generation" in areas
+    assert "Videos" in areas
+    assert "Programming and Code Generation" in areas
+    assert "Learning and Teaching" in areas
+    assert "Mathematics" in areas
+    assert "Productivity applications" in areas
 
     ensure_default_invite_exists(test_db)
 

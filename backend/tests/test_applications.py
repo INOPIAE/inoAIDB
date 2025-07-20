@@ -2,15 +2,20 @@ import io
 import csv
 from app.models import ApplicationUser, Application
 
-def new_application(authenticated_client):
-    response = authenticated_client.post("api/applications/", json={
-        "name": "Test Application",
-        "description": "This is a test.",
+def new_application(authenticated_client, id="", with_areas=False):
+    data = {
+        "name": "Test Application" + id,
+        "description": "This is a test." + id,
         "manufacturer_id": 1,
         "languagemodel_id": 1,
         "modelchoice_id": 1,
         "is_active": True
-    })
+    }
+
+    if with_areas:
+        data["area_ids"] = [1, 3]
+
+    response = authenticated_client.post("api/applications/", json=data)
 
     return response
 
@@ -22,6 +27,15 @@ def test_create_application(authenticated_client_for_email):
     assert data["name"] == "Test Application"
     assert data["description"] == "This is a test."
     assert data["is_active"] is True
+
+    response = new_application(authenticated_client, "1", True)
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["name"] == "Test Application1"
+    assert data["description"] == "This is a test.1"
+    assert data["is_active"] is True
+    area_names = [area['area'] for area in data['areas']]
+    assert set(area_names) == {'Text', 'Image'}
 
 
 def test_create_application_duplicate(authenticated_client_for_email):
@@ -70,6 +84,19 @@ def test_create_application_wrong_data(authenticated_client_for_email):
     data = response.json()
     assert data["detail"] == "Model choice not found"
 
+    response = authenticated_client.post("api/applications/", json={
+        "name": "Test Application1",
+        "description": "This is a test.",
+        "manufacturer_id": 1,
+        "languagemodel_id": 1,
+        "modelchoice_id": 1,
+        "is_active": True,
+        "area_ids": [1, 5]
+    })
+    assert response.status_code == 400
+    data = response.json()
+    assert data["detail"] == "One or more area_ids are invalid."
+
 def test_get_applications(client):
     response = client.get("/api/applications/")
     assert response.status_code == 200
@@ -107,7 +134,8 @@ def test_update_application(authenticated_client_for_email):
         "manufacturer_id": 2,
         "languagemodel_id": 2,
         "modelchoice_id": 2,
-        "is_active": False
+        "is_active": False,
+        "area_ids": [1, 2]
     })
     assert response.status_code == 200
     data = response.json()
@@ -117,6 +145,36 @@ def test_update_application(authenticated_client_for_email):
     assert data["languagemodel_id"] == 2
     assert data["modelchoice_id"] == 2
     assert data["is_active"] is False
+    area_names = [area['area'] for area in data['areas']]
+    assert set(area_names) == {'Text', 'Video'}
+
+    response = authenticated_client.put(f"api/applications/{application_id}", json={
+        "name": "Updated Application",
+        "description": "Updated description",
+        "manufacturer_id": 2,
+        "languagemodel_id": 2,
+        "modelchoice_id": 2,
+        "is_active": False,
+        "area_ids": [3, 2]
+    })
+    assert response.status_code == 200
+    data = response.json()
+    area_names = [area['area'] for area in data['areas']]
+    assert set(area_names) == {'Image', 'Video'}
+
+    response = authenticated_client.put(f"api/applications/{application_id}", json={
+        "name": "Updated Application",
+        "description": "Updated description",
+        "manufacturer_id": 2,
+        "languagemodel_id": 2,
+        "modelchoice_id": 2,
+        "is_active": False,
+        "area_ids": []
+    })
+    assert response.status_code == 200
+    data = response.json()
+    area_names = [area['area'] for area in data['areas']]
+    assert data['areas'] == []
 
 
 def test_update_application_not_found(authenticated_client_for_email):
@@ -173,6 +231,19 @@ def test_update_application_wrong_data(authenticated_client_for_email):
     assert response.status_code == 400
     data = response.json()
     assert data["detail"] == "Model choice not found"
+
+    response = authenticated_client.put(f"api/applications/{application_id}", json={
+        "name": "Updated Application",
+        "description": "Updated description",
+        "manufacturer_id": 1,
+        "languagemodel_id": 1,
+        "modelchoice_id": 1,
+        "is_active": True,
+        "area_ids": [1, 5]
+    })
+    assert response.status_code == 400
+    data = response.json()
+    assert data["detail"] == "One or more area_ids are invalid."
 
 
 def test_get_applications_by_manufacturer(authenticated_client_for_email):
@@ -396,20 +467,21 @@ def test_export_applications_csv(authenticated_client_for_email):
     reader = csv.reader(f)
     rows = list(reader)
 
-    assert rows[0] == ["Application", "Description", "Manufacturer", "LanguageModel", "ModelChoice", "Selected", "Risk"]
+    assert rows[0] == ["Application", "Description", "Manufacturer", "LanguageModel", "ModelChoice", "Selected", "Risk", "Areas"]
 
 
     app1_row = next(row for row in rows if "Office" in row)
-    assert app1_row[-2] in ("True", "true", "1", "True") 
-    assert app1_row[-1] == "unknown"
+    assert app1_row[-3] == "Yes"
+    assert app1_row[-2] == "unknown"
+    assert app1_row[-1] == "Text, Image"
 
     app1_row = next(row for row in rows if "Visual Studio Code" in row)
-    assert app1_row[-2] in ("False", "false", "0")
-    assert app1_row[-1] == "unknown"
+    assert app1_row[-3] == "No"
+    assert app1_row[-2] == "unknown"
+    assert app1_row[-1] == ""
 
 def test_export_applications_csv_no_user(authenticated_client_for_email, client):
     authenticated_client = authenticated_client_for_email("inactive@example.com")
-
 
     response = authenticated_client.get("/api/applications/export/csv")
     assert response.status_code == 403
@@ -457,3 +529,13 @@ def test_search_applications(client, db):
     data = response.json()
     assert data == []
     assert len(data) == 0
+
+def test_get_areas(client):
+    response = client.get("/api/applications/areas/")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 3
+    areas = [item["area"] for item in data]
+    assert "Text" in areas
+    assert "Video" in areas
+    assert "Image" in areas

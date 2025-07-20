@@ -1,5 +1,5 @@
 from datetime import datetime, UTC
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text, Index
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text, Index, Table
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -77,6 +77,8 @@ class Application(Base):
     languagemodel = relationship("LanguageModel", back_populates="applications")
     modelchoice = relationship("ModelChoice", back_populates="applications")
 
+    areas = relationship("ApplicationArea", secondary="application_area_entry", back_populates="applications")
+
     __table_args__ = (
         Index('ix_application_name_trgm', 'name', postgresql_using='gin', postgresql_ops={'name': 'gin_trgm_ops'}),
     )
@@ -139,3 +141,18 @@ class PaymentToken(Base):
     used_at = Column(DateTime, nullable=True)
 
     user = relationship("User")
+
+class ApplicationArea(Base):
+    __tablename__ = "application_area"
+    id = Column(Integer, primary_key=True)
+    area = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
+
+    applications = relationship("Application", secondary="application_area_entry", back_populates="areas")
+
+application_area_entry_table = Table(
+    'application_area_entry',
+    Base.metadata,
+    Column('application_id', ForeignKey('applications.id'), primary_key=True),
+    Column('area_id', ForeignKey('application_area.id'), primary_key=True)
+)

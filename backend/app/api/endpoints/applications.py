@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy import func, text
-from sqlalchemy.orm import Session, aliased
+from sqlalchemy.orm import Session, aliased, selectinload
 from typing import List
 from fastapi.responses import StreamingResponse
 import csv
 import io
 
 from app.database import SessionLocal
-from app.schemas import ApplicationOut, ApplicationWithManufacturerOut, CreateApplication, ApplicationStats, ApplicationUserUpdate, RiskBase
-from app.models import Application, Manufacturer, User, LanguageModel, ModelChoice, ApplicationUser, Risk
+from app.schemas import ApplicationOut, ApplicationWithManufacturerOut, CreateApplication, ApplicationStats, ApplicationUserUpdate, RiskBase, ApplicationAreaBase
+from app.models import Application, Manufacturer, User, LanguageModel, ModelChoice, ApplicationUser, Risk, ApplicationArea
 from app.api.deps import get_current_user
 
 router = APIRouter()
@@ -44,7 +44,27 @@ def create_application(application: CreateApplication, db: Session = Depends(get
             detail="Model choice not found"
         )
 
-    db_application = Application(**application.model_dump())
+    db_application = Application(
+        name=application.name,
+        description=application.description,
+        manufacturer_id=application.manufacturer_id,
+        languagemodel_id=application.languagemodel_id,
+        modelchoice_id=application.modelchoice_id,
+        is_active=application.is_active,
+    )
+
+    if application.area_ids:
+        areas = db.query(ApplicationArea).filter(ApplicationArea.id.in_(application.area_ids)).all()
+
+        if len(areas) != len(application.area_ids):
+            raise HTTPException(
+                status_code=400,
+                detail="One or more area_ids are invalid."
+            )
+
+        areas = db.query(ApplicationArea).filter(ApplicationArea.id.in_(application.area_ids)).all()
+        db_application.areas = areas 
+
     db.add(db_application)
     db.commit()
     db.refresh(db_application)
@@ -98,6 +118,12 @@ def get_active_applications_with_manufacturer(db: Session = Depends(get_db)):
         .all()
     )
 
+    app_ids = [r.id for r in rows]
+    area_map = {
+        app.id: [ApplicationAreaBase.model_validate(area) for area in app.areas]
+        for app in db.query(Application).options(selectinload(Application.areas)).filter(Application.id.in_(app_ids)).all()
+    }
+
     result = [
         {
             "id": r.id,
@@ -112,6 +138,7 @@ def get_active_applications_with_manufacturer(db: Session = Depends(get_db)):
             "modelchoice_name": r.modelchoice_name,
             "applicationuser_id": 0,
             "applicationuser_selected": False,
+            "areas": area_map.get(r.id, []),
         }
         for r in rows
     ]
@@ -153,6 +180,12 @@ def get_applications_with_manufacturer(db: Session = Depends(get_db), current_us
 
     rows = query.order_by(Application.name.asc()).all()
 
+    app_ids = [r.id for r in rows]
+    area_map = {
+        app.id: [ApplicationAreaBase.model_validate(area) for area in app.areas]
+        for app in db.query(Application).options(selectinload(Application.areas)).filter(Application.id.in_(app_ids)).all()
+    }
+
     result = [
         {
             "id": r.id,
@@ -169,6 +202,7 @@ def get_applications_with_manufacturer(db: Session = Depends(get_db), current_us
             "applicationuser_selected": r.applicationuser_selected if r.applicationuser_selected else False,
             "risk_id": r.risk_id if r.risk_id else 1,
             "risk_name": r.risk_name if r.risk_name else "unknown",
+            "areas": area_map.get(r.id, []),
         }
         for r in rows
     ]
@@ -180,6 +214,10 @@ def get_application_stats(db: Session = Depends(get_db)):
     total_count = db.query(Application).count()
     active_count = db.query(Application).filter(Application.is_active == True).count()
     return ApplicationStats(total=total_count, active=active_count)
+
+@router.get("/areas/", response_model=List[ApplicationAreaBase])
+def get_areas(db: Session = Depends(get_db)):
+    return db.query(ApplicationArea).order_by(ApplicationArea.area).all()
 
 @router.get("/{application_id}", response_model=ApplicationOut)
 def get_application(application_id: int, db: Session = Depends(get_db)):
@@ -214,6 +252,17 @@ def update_application(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Model choice not found"
         )
+
+    if updated_data.area_ids:
+        areas = db.query(ApplicationArea).filter(ApplicationArea.id.in_(updated_data.area_ids)).all()
+        if len(areas) != len(updated_data.area_ids):
+            raise HTTPException(
+                status_code=400,
+                detail="One or more area_ids are invalid."
+            )
+        app.areas = areas
+    else:
+        app.areas = []
 
     for field, value in updated_data.model_dump().items():
         setattr(app, field, value)
@@ -287,12 +336,15 @@ def export_applications_csv(db: Session = Depends(get_db), current_user: User = 
 
     output = io.StringIO()
     writer = csv.writer(output, quoting=csv.QUOTE_ALL)
-    writer.writerow(["Application", "Description", "Manufacturer", "LanguageModel", "ModelChoice", "Selected", "Risk"])
+    writer.writerow([
+        "Application", "Description", "Manufacturer", "LanguageModel", "ModelChoice", "Selected", "Risk", "Areas"
+    ])
 
     AU = aliased(ApplicationUser)
 
     data = (
         db.query(
+            Application.id,
             Application.name,
             Application.description,
             Manufacturer.name.label("manufacturer_name"),
@@ -306,19 +358,34 @@ def export_applications_csv(db: Session = Depends(get_db), current_user: User = 
         .join(ModelChoice, Application.modelchoice_id == ModelChoice.id)
         .outerjoin(AU, (AU.application_id == Application.id) & (AU.user_id == current_user.id))
         .outerjoin(Risk, Risk.id == AU.risk_id)
-        .filter(Application.is_active == True) 
+        .filter(Application.is_active == True)
         .all()
     )
 
+    app_ids = [r.id for r in data]
+    area_map = {
+        app.id: [area.area for area in app.areas]
+        for app in db.query(Application).options(selectinload(Application.areas)).filter(Application.id.in_(app_ids)).all()
+    }
+
     for row in data:
-        writer.writerow(row)
+        areas = ", ".join(area_map.get(row.id, []))
+        writer.writerow([
+            row.name,
+            row.description,
+            row.manufacturer_name,
+            row.languagemodel_name,
+            row.modelchoice_name,
+            "Yes" if row.applicationuser_selected else "No",
+            row.risk_name,
+            areas
+        ])
 
     output.seek(0)
 
-    response = StreamingResponse(
+    return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=applications.csv"}
     )
-    return response
 
