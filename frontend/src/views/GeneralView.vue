@@ -14,6 +14,10 @@
       height="600"
       style="border: none"
     ></iframe>
+
+    <p v-if="pageKey === 'about'" class="mt-4 text-caption text-grey">
+      {{ $t('currentVersionUsesCommit') }} {{ commit }} ({{ commitDate }})
+    </p>
   </v-container>
 </template>
 
@@ -33,6 +37,9 @@ const pageKey = computed(() => route.params.page)
 const fileName = computed(() => `${pageKey.value}_${locale.value}.html`)
 const htmlPath = computed(() => `/hdocs/${fileName.value}`)
 const pageTitle = computed(() => t(`${pageKey.value}Title`))
+
+const commit = __APP_COMMIT__;
+const commitDate = __APP_COMMIT_DATE__;
 
 onMounted(async () => {
   try {
