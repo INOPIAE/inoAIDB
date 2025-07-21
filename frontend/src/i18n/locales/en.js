@@ -156,4 +156,5 @@ export default {
   "a_Learning and Teaching": "Learning and Teaching",
   "a_Mathematics": "Mathematics",
   "a_Productivity applications": "Productivity applications",
+  currentVersionUsesCommit: "The current vwesion uses committ:"
 }
