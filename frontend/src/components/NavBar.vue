@@ -170,9 +170,8 @@ export default {
             },
             {
                 title: 'apiDocumentation',
-                style: 'external',
                 icon: 'mdi-api',
-                href: `${backendUrl}${root_mount}/docs`,
+                href: `/apidocs`,
                 condition:  null,
             },
             {

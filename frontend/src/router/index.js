@@ -12,6 +12,7 @@ import ResetPasswordView from '@/views/ResetPasswordView.vue'
 import GeneralView from '@/views/GeneralView.vue'
 import PaymentAdminView from '@/views/PaymentAdminView.vue'
 import PaymentUseView from '@/views/PaymentUseView.vue'
+import ApiDocsView from '@/views/ApiDocsView.vue'
 
 import { useAuthStore } from '@/stores/auth'
 import { storeToRefs } from 'pinia'
@@ -37,6 +38,7 @@ const routes = [
   { path: '/reset-password', component: ResetPasswordView },
   { path: '/general/:page(about|dataprotection|imprint)', name: 'about', component: GeneralView, },
   { path: '/payment', name: 'PaymentUse', component: () => import('@/views/PaymentUseView.vue'),},
+  { path: '/apidocs', component: ApiDocsView },
 ]
 
 const router = createRouter({
